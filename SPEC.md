@@ -40,8 +40,8 @@ Cards are sorted soonest first. Multi-day events appear once, sorted by their fi
 | # | Decision | Why | Source |
 |---|---|---|---|
 | 1 | Only events Misha starred appear. Auto-starred events count the same, with no badge. | The feed marks all 32 auto-starred events as starred too. Amanda doesn't need to tell them apart. | client, API |
-| 2 | "Event type" means the feed's tags. Multiple tags match ANY. | It widens the list when she picks more tags, instead of quickly emptying it. | client |
-| 3 | Tag options are the tags in the current date window's results. | She never picks a tag that returns nothing. This replaced her first answer of "all 12 tags, always". | client |
+| 2 | "Event type" means the feed's tags. Multiple tags match ANY. Confirmed final by Amanda, with no check with Misha needed. | It widens the list when she picks more tags, instead of quickly emptying it. | client |
+| 3 | Tag options are the tags in the current date window's results, worked out before any tag is picked. They stay the same while she picks tags and change only when she changes the dates. | She never picks a tag that returns nothing, and picking one tag doesn't remove the others. This replaced her first answer of "all 12 tags, always". | client |
 | 4 | Default window is today to +14 days, extendable to +30. | Two weeks is how far ahead she usually posts. The brief said 30 days. | client, brief |
 | 5 | "Today" is the real current date in her browser. An event is upcoming if its date is in the window. | The feed's own "today" is the day it was last rebuilt (2026-09-27, three days old on the day we checked). The feed's `past` marker is also unreliable (see section 8). | client, API |
 | 6 | Cards show date, title, tags and image. No description, time or venue. | Keeps v1 to what she needs to choose by picture. It also avoids the question of Misha's first-person wording with occasional profanity. | client |
@@ -56,7 +56,7 @@ Cards are sorted soonest first. Multi-day events appear once, sorted by their fi
 | 15 | Cards with no image cannot be selected. She can paste a replacement link, which is checked first. | Nothing without a picture can end up in the download. The checking fixes a Task 1 bug where a bad pasted link counted as resolved. | client, code |
 | 16 | Images are shown to her through our own server. | An image can pass the server's check and still fail to show in her browser if the source site blocks outside display. Loading through our server avoids that. | client (approved) |
 | 17 | The counter follows what is on screen. | Her call. | client |
-| 18 | Hosted on Vercel, linked to the GitHub repo, with one shared password stored as a hosting setting and not in the repo. | Simple for someone new to building. Every push updates the live site. She chose a password rather than an open link. | client (approved) |
+| 18 | Hosted on Vercel, linked to the GitHub repo, with one shared password stored as a hosting setting and not in the repo. Amanda sets the password and decides who gets it. | Simple for someone new to building. Every push updates the live site. She chose a password rather than an open link. | client (approved) |
 | 19 | No sample or test data mode. We test against the real feed. | The live feed has upcoming starred events, so there is real data to test with. | client |
 | 20 | Desktop or laptop browser is the target. | Her stated device. | client |
 | 21 | No "confirm before posting" reminder and no "feed last updated" line. | She doesn't want them. This overrides the brief. Consequence: a star Misha adds midweek may not show until the feed's Sunday rebuild, and the page won't explain why. | client, brief |
@@ -120,7 +120,6 @@ Things we discussed and deliberately left out, so they aren't lost.
 - Image finding can't read pages that build their content with JavaScript, and it has no measured success rate by website yet.
 
 **Still to confirm or check**
-- The tag meaning and ANY matching rule should be confirmed with Misha, since "event type" was the brief's wording. Amanda answered for now.
 - Whether this session's environment can reach the event websites themselves is unknown. The feed address is allowed, but event sites haven't been tested. Real image-finding tests need that.
 - The live feed has two fields the brief doesn't mention (`overlay` and `cap`, which look like admin statistics). They are ignored for now.
 

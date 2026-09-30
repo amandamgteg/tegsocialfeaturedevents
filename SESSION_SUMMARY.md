@@ -38,10 +38,13 @@
 - I haven't tested whether this environment can reach the event websites themselves, only the feed address. Real image-finding tests need that.
 - No pull request is open. The spec is on a branch only.
 
+## Answered after the first draft
+
+- "Event type" means the feed's `tags`, with multiple tags matching ANY. Amanda confirmed this as final, with no check with Misha needed.
+- The tag filter buttons come from the date window's results, before any tag is picked. They stay the same while tags are picked.
+- Amanda sets the shared password and decides who gets it.
+- No pull request for now. `SPEC.md` and this summary stay on the branch `claude/teg-event-selector-84ay3j`.
+
 ## Open questions
 
-1. **For Amanda or Misha:** confirm that "event type" means the feed's `tags`, with multiple tags matching ANY. Amanda answered, but the brief flagged it for Misha.
-2. **For Amanda:** I assumed the tag filter options come from the date window's results before any tag filtering. She didn't explicitly confirm that.
-3. **For Amanda and India:** who sets and shares the shared password wasn't discussed.
-4. **For Amanda:** do you want a pull request opened for `SPEC.md`?
-5. **For India:** are you okay with the changes above that override your brief?
+1. **For India:** are you okay with the changes above that override your brief?
