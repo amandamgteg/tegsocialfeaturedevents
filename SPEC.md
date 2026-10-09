@@ -60,6 +60,11 @@ Cards are sorted soonest first. Multi-day events appear once, sorted by their fi
 | 19 | No sample or test data mode. We test against the real feed. | The live feed has upcoming starred events, so there is real data to test with. | client |
 | 20 | Desktop or laptop browser is the target. | Her stated device. | client |
 | 21 | No "confirm before posting" reminder and no "feed last updated" line. | She doesn't want them. This overrides the brief. Consequence: a star Misha adds midweek may not show until the feed's Sunday rebuild, and the page won't explain why. | client, brief |
+| 22 | One API call per event card (one per event link, as in decision 7). The browser runs about 5 calls at a time. | The Task 1 finder only returns after it has finished every event it was given (`extractor.ts:279-348`), and it handles them one at a time (`:282`). One call per card lets images fill in as they are found (section 3, step 2) and keeps each call short. | client, code |
+| 23 | Resolved image URLs are cached in the browser, keyed by event URL plus cache headers. No server store. | Keeps v1 simple: nothing to host or clean up on the server. | client |
+| 24 | The image proxy and the pasted-link checker both require an `image/*` Content-Type, a size cap, a timeout, and refuse private IPs and non-http(s) URLs. For v1: size cap 8 MB, timeout 8 seconds. | Closes three gaps in the Task 1 code: a missing Content-Type is accepted by the extractor's check (`extractor.ts:210-211`), the extractor has no size limit, and nothing blocks private addresses or non-web links. The 8 MB and 8 s values are the defaults already in `imageFetch.ts` (`:1`, `:45`). | client, code |
+| 25 | The extractor is copied from Task 1, not rewritten. The two separate image checks are consolidated into one shared check used by the finder, the proxy and the pasted-link checker. | Keeps the finder's behaviour the same as Task 1. The two existing checks follow different rules (`extractor.ts:236-258` against `imageFetch.ts:41-98`), so an image can pass one and fail the other. | client, code |
+| 26 | An adapter converts each feed event into the extractor's seven-field input and passes the results back in the shape the cards need. The fields and their sources are in section 10. | The feed's field names differ from what the extractor expects (`types.ts:1-9`). | client, code |
 
 ## 5. Out of scope for v1
 
@@ -130,3 +135,60 @@ Things we discussed and deliberately left out, so they aren't lost.
 - 46 starred events are dated 2026-09-27 or later, on 39 different event links. 36 of them are dated 2026-09-30 or later. About half are weekly series such as Tinker Tuesday, Hot Breath Karaoke and Curiosity Café.
 - The brief says upcoming means `past === false`. In the live feed, `past` is either `true` or missing, and is never `false`. Using the brief's rule would show no events at all. That is why decision 5 uses dates.
 - For the default window (2026-09-30 to 2026-10-14), there are 28 starred events on 25 different event links. That is inside the brief's estimate of 10 to 30.
+
+## 9. Reused from Task 1
+
+Source: the three Task 1 files `extractor.ts`, `imageFetch.ts` and `types.ts`, read on 2026-10-09. Line numbers below refer to those files. The rest of the Task 1 repo, including its adapter, has not been seen.
+
+**Copied as-is (decision 25)**
+- `extractImagesAndHandles()` and its helpers (`extractor.ts`): the order it looks for an image (the event's embedded image, then the preview image (og:image), the Twitter preview image, JSON-LD images, then `<img>` tags), the rules for skipping logos and small images, and the failure reasons.
+- `EventItem` and `ExtractionResult` (`types.ts`).
+- `fetchImageBuffer()` and `extensionForImage()` (`imageFetch.ts`) as the base for the image proxy and the downloads.
+
+**Changes**
+- The two image checks are merged into one shared check (decision 25). It rejects a missing Content-Type, enforces the size cap and timeout, and refuses private IPs and non-http(s) URLs (decision 24).
+- The finder is called once per event card, about 5 at a time from the browser, not once for the whole list (decision 22).
+- A new adapter sits in front of the finder (decision 26, section 10).
+
+**Excluded, and why**
+- The Task 1 adapter: not seen, and it was written for the newsletter, not the TEG feed.
+- The rest of the Task 1 repo, including the newsletter parser: not needed. `types.ts` imports nothing from it.
+- Instagram handles: the finder still produces them, because the extractor is copied as-is, but the cards do not show them (section 3), so v1 ignores them.
+- `mishaHosted`: the extractor never reads it (see section 10).
+
+## 10. Adapter field mapping (decision 26)
+
+Feed fields were checked against the live feed on 2026-10-09. The adapter sends one item per event card (one per event link). "No match" means the feed has no matching field. Amanda settled how to fill each one on 2026-10-09.
+
+| Extractor field | Feed field | How it is filled |
+|---|---|---|
+| `id` | `id` | The feed's `id`. Each feed event has its own `id`, and a multi-day event has one per day. The card uses the `id` of its first date in the window (the same date used to sort cards, section 3). |
+| `title` | `title` | The feed's `title`. |
+| `eventUrl` | `url` | The feed's `url`. Every event has one. |
+| `eventUrlType` | no match | Always `"external"`. Every starred upcoming link in the feed goes to an outside website. `"internal"` would skip the page fetch (`extractor.ts:284-304`) and fail every event. |
+| `embeddedImageUrl` | no match | Left empty. The feed has no image field. The type makes it optional (`types.ts:6`). |
+| `sourceUrl` | no match | Set to the event link (`url`). The finder only uses it to resolve an embedded image (`extractor.ts:191`), so with no embedded image it has no effect. |
+| `mishaHosted` (seventh field) | no match | Always `false`. The type requires it (`types.ts:8`), but the extractor never reads it. |
+
+**Results.** The finder returns one result per item, in order: `eventId`, `status` (`resolved` or `failed`), and either `imageUrl` or `failureReason`. It also returns `instagramHandle`, which the cards ignore. The adapter passes `imageUrl` or `failureReason` back to the card by `eventId`.
+
+## 11. Known gaps from the Task 1 code review
+
+Each gap is checked against the three files. No slice plan exists yet, so the owning slice for each is still to be assigned.
+
+| Gap | Where in the code | Fix | Owning slice |
+|---|---|---|---|
+| A missing Content-Type is accepted | `extractor.ts:210-211`, used at `:251`. `imageFetch.ts:61-63` rejects it. | Reject it in the shared check (decisions 24 and 25). | To be assigned |
+| No byte limit | The extractor's check never reads the body (`:244-251`), and the page HTML is read in full (`:316`). `imageFetch.ts` has an 8 MB limit. | Size cap in the shared check (decision 24). The page HTML read needs a cap too, with the value chosen when it is built. | To be assigned |
+| Validation logic is written twice | `extractor.ts:236-258` and `imageFetch.ts:41-98`, with different timeouts (6 s and 8 s), user agents and strictness. | One shared check (decision 25). | To be assigned |
+| Events are processed one at a time | `extractor.ts:282` and `:263`. | One call per card, about 5 at a time (decision 22). | To be assigned |
+| No measured success rate | No counting or logging in these files. | Record resolved or failed, and the reason, per website during testing. | To be assigned |
+| No saved test examples | Not determinable from these files. | Decision 19 says no sample data, so keep a short written record of which real event links were tested and what happened. | To be assigned |
+| The server check can pass while the browser still can't show the image | The check sends no `Referer` and only looks at status and Content-Type. | Show images through our own server (decision 16), using the same shared check (decision 24). | To be assigned |
+| The image file name's extension comes from the URL path first, so a link ending in `.php` is saved as `.php` | `imageFetch.ts:29-39` | Use the Content-Type of the checked image first, then fall back to the URL. Proposed, not yet decided. | To be assigned |
+| The extractor's GET request never reads or cancels the response body | `extractor.ts:244-251` | Cancel the body once the status and Content-Type are checked. Not tested. | To be assigned |
+| "Resolved" only means the link returns an image, not that it is the right one | `extractor.ts:251`, and `<img>` tags with no width or height skip the size filter (`:175`). | No fix in v1. Amanda sees the picture on the card and can paste a replacement (decision 15). | Not applicable |
+
+**Open items**
+- Whether Vercel limits the size of a response (which could affect the image proxy and the ZIP download) has not been checked.
+- No slice plan exists, so no gap has an owning slice yet.
