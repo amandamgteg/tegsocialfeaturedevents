@@ -181,3 +181,68 @@ Copy this and fill it in:
 **Needs from Amanda:**
 - Please check on something that happened. While I was working, three test files that I did not write appeared in the project folder: `tests/app/lightbox.test.tsx`, `tests/app/selection.test.tsx` and `tests/lib/window-filters.test.ts`. Two cover issues 4 and 5 and now pass (I matched their wording "From" for the start date). The third is for issue 6 (the larger picture view), which you did not ask me to build, so its 5 checks fail. I did not change or delete any of them, and I left all three out of what I saved to GitHub. Please tell me if they are yours, and whether I should save them.
 
+### 2026-10-14 · Issue 6: Larger picture view
+**Status:** Done on my side. Not live on the internet yet.
+
+**What got done:**
+- Clicking a card's picture now opens a larger view of it. It closes with the Close button, the Escape key, or a click outside the picture. Clicking the picture itself does not close it.
+- Cards with no picture, or still loading, have nothing to click.
+- Opening and closing the larger view does not change what is picked or filtered.
+- The larger picture also comes through our own picture relay, never straight from the event's website.
+- Wrote the automatic checks first, then built until they passed.
+
+**What you can see or try:**
+- Not yet on the internet. In a real browser against the live list, clicking a picture opened the large view and Escape closed it.
+
+**What is still waiting:**
+- Putting the tool on Vercel.
+
+**Needs from Amanda:**
+- Nothing.
+
+### 2026-10-14 · Issue 7: Fix a missing picture by pasting a link
+**Status:** Done on my side. Not live on the internet yet.
+
+**What got done:**
+- A card with no picture now shows the link to the event page and a box to paste a picture link, with a "Use this image" button.
+- The tool checks the pasted link first, using the same checker as everything else (so there are no separate rules). If it really is a picture, it appears on the card, the top counter goes up, and the card can now be picked.
+- If it is not a picture, the card stays exactly as it was and a plain message says why. For example: "That link isn't an image (it looks like a web page or another kind of file). Try right-clicking the picture itself and choosing "Copy image address"." The text you typed stays in the box so you can fix it.
+- A refused link never undoes a picture you pasted earlier on another card. Links that point to private places, are not web links, are too big (over 8 MB), or take too long are refused the same way.
+- A pasted picture is not sent back to the lookup when you press Retry.
+- I used a plain text box, not a browser "link" box, so that our own readable message shows instead of the browser's.
+- Wrote the automatic checks first, then built until they passed.
+
+**What you can see or try:**
+- Not yet on the internet. In a real browser: pasting a web page link, a made-up link and an internal address were each refused with a plain message, and pasting a real picture link was accepted (counter went from 12 to 13 pictures).
+
+**What is still waiting:**
+- Pasted pictures are not remembered after a refresh. That is issue 9.
+
+**Needs from Amanda:**
+- Nothing.
+
+### 2026-10-14 · Issue 8: Download selected pictures
+**Status:** Done on my side. Not live on the internet yet.
+
+**What got done:**
+- Added a "Download selected images" button. It is greyed out when nothing is picked.
+- One picked picture downloads as one file, named like `2026-10-14_hot-breath-karaoke.png`. Two or more download as one ZIP file called `teg-event-images.zip`, with each picture inside under its own name. Files go to your normal Downloads folder.
+- Names are the date, then the title in lowercase with spaces as dashes. Accents and symbols are cleaned up, long titles are shortened, and an empty or all-symbols title becomes "event". The file ending (.jpg, .png, .webp) comes from what the picture really is, not from the link, so a link ending in ".php" is still saved as a proper picture.
+- Two events with the same date and title get "-2", "-3" so nothing overwrites anything.
+- Picks that are hidden by a tag, or by changing the dates, are still downloaded.
+- The ZIP is built right in your browser from pictures fetched through our relay. No server sends a ZIP, so Vercel's size limit does not apply to it.
+- If one picture cannot be fetched, the others still download, and a red message names the one that failed. If only one of several works, you get that one as a single file, not a ZIP.
+- Pictures only. No list of links.
+- Added a small, well-known ZIP-making library (fflate).
+- Wrote the automatic checks first (335 in total now, all passing).
+
+**What you can see or try:**
+- Not yet on the internet. In a real browser against the live list: one pick downloaded as `2026-10-14_artists-in-the-library-animate-with-16mm-film.png`, and three picks downloaded as a ZIP that opened with three correctly named pictures.
+
+**What is still waiting:**
+- Putting the tool on Vercel, then one real check there with a few pictures.
+- Closing the page loses your picks. That is issue 9.
+
+**Needs from Amanda:**
+- Nothing for the code. The plan did not say how to report a failed download, so I made one small addition to SPEC.md (section 12.9): the tool saves what it can, then names the pictures that failed. Tell me if you want that to work differently.
+

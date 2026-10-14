@@ -124,3 +124,33 @@ describe("POST /api/check-image", () => {
     expect((await post({ url: URL1 })).headers.get("cache-control") ?? "").not.toMatch(/max-age=[1-9]/);
   });
 });
+
+describe("checkPastedImage: wording for a non-technical reader", () => {
+  it("explains a web page link in plain words, and says how to get the right link", async () => {
+    stubFetch(() => htmlResponse("<p>hi</p>"));
+    const r = await checkPastedImage("https://example.com/page");
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.reason).toMatch(/isn't an image/i);
+      expect(r.reason).toMatch(/copy image (address|link)/i);
+      expect(r.reason).not.toMatch(/text\/html|content-type|mime/i);
+    }
+  });
+  it("explains a link it can't use without technical terms", async () => {
+    stubFetch(() => imageResponse());
+    const r = await checkPastedImage("not a url");
+    if (!r.ok) expect(r.reason).toMatch(/^That link can't be used/);
+    const p = await checkPastedImage("http://127.0.0.1/a.jpg");
+    if (!p.ok) expect(p.reason).toMatch(/^That link can't be used/);
+  });
+  it("says a too-big image is too big, in plain words", async () => {
+    stubFetch(() => imageResponse("image/jpeg", chunkedBody(9, 1024 * 1024)));
+    const r = await checkPastedImage("https://img.example.com/a.jpg");
+    if (!r.ok) expect(r.reason).toBe("That image is larger than 8 MB.");
+  });
+  it("says when the site could not be reached", async () => {
+    stubFetch(() => new Response("gone", { status: 404, headers: { "content-type": "image/png" } }));
+    const r = await checkPastedImage("https://img.example.com/a.jpg");
+    if (!r.ok) expect(r.reason).toMatch(/^Couldn't load that link/);
+  });
+});

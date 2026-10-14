@@ -7,7 +7,8 @@ import { DateRangePicker, TagFilter } from "./Filters";
 import type { PasteResult } from "./PasteBox";
 import { forgetCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
-import { hiddenSelectedCount, toggleSelected } from "./selection";
+import { downloadSelected, PartialDownloadError } from "@/lib/download";
+import { hiddenSelectedCount, selectedDownloadItems, toggleSelected } from "./selection";
 
 async function findImage(card: EventCard): Promise<ImageResult> {
   const res = await fetch("/api/find-image", {
@@ -32,8 +33,12 @@ export function EventsApp() {
   const [error, setError] = useState<string | null>(null);
   const fetched = useRef(false);
   const requested = useRef(new Set<string>()); // urls already looked up (or being looked up)
+  const knownCards = useRef(new Map<string, EventCard>()); // every card seen, so selections outside the window can still be downloaded
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const windowCards = useMemo(() => (feed ? buildCards(feed, window) : []), [feed, window]);
+  windowCards.forEach((c) => knownCards.current.set(c.url, c));
   const options = useMemo(() => tagOptions(windowCards), [windowCards]);
   const tags = pickedTags.filter((t) => options.includes(t));
   const visible = useMemo(() => filterByTags(windowCards, tags), [windowCards, tags.join("\n")]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -109,6 +114,18 @@ export function EventsApp() {
     }
   };
 
+  const download = async () => {
+    setDownloadError(null);
+    setDownloading(true);
+    try {
+      await downloadSelected(selectedDownloadItems(selected, knownCards.current, imagesByUrl));
+    } catch (err) {
+      setDownloadError(err instanceof PartialDownloadError ? err.message : "Couldn't download the images. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const changeWindow = (w: DateWindow) => setWindow(clampWindow(w, today));
 
   if (error) return <p>{error}</p>;
@@ -117,6 +134,12 @@ export function EventsApp() {
     <>
       <DateRangePicker window={window} today={today} onChange={changeWindow} />
       <TagFilter options={options} selected={tags} onChange={setPickedTags} />
+      <p>
+        <button type="button" onClick={download} disabled={selected.size === 0 || downloading}>
+          {downloading ? "Preparing download…" : "Download selected images"}
+        </button>
+      </p>
+      {downloadError && <p role="alert" style={{ color: "#b00020" }}>{downloadError}</p>}
       <CardList
         cards={visible}
         images={imagesFor(visible)}

@@ -294,6 +294,7 @@ type DateWindow  = { start: string; end: string }; // YYYY-MM-DD
   fileNameFor(item: { date: string; title: string }, contentType: string): string // "2026-10-07_tinker-tuesday.jpg"
   ```
 - **Hides:** the slug rules, the file extension (taken from the response Content-Type, which fixes the `.php` gap in section 11), duplicate-name handling, one image versus ZIP, and the ZIP library.
+- **Failures (added in issue 8, signature unchanged):** `downloadSelected` still returns `Promise<void>`. If some images can't be fetched, it saves the ones that worked (one file or a ZIP, decided by how many worked) and then throws `PartialDownloadError` with the list of titles that failed, so the page can tell the user. The ZIP library is `fflate`, and the ZIP is named `teg-event-images.zip`.
 - **Called by:** the Download button.
 
 ### Dependencies
