@@ -65,6 +65,7 @@ Cards are sorted soonest first. Multi-day events appear once, sorted by their fi
 | 24 | The image proxy and the pasted-link checker both require an `image/*` Content-Type, a size cap, a timeout, and refuse private IPs and non-http(s) URLs. For v1: size cap 8 MB, timeout 8 seconds. | Closes three gaps in the Task 1 code: a missing Content-Type is accepted by the extractor's check (`extractor.ts:210-211`), the extractor has no size limit, and nothing blocks private addresses or non-web links. The 8 MB and 8 s values are the defaults already in `imageFetch.ts` (`:1`, `:45`). | client, code |
 | 25 | The extractor is copied from Task 1, not rewritten. The two separate image checks are consolidated into one shared check used by the finder, the proxy and the pasted-link checker. | Keeps the finder's behaviour the same as Task 1. The two existing checks follow different rules (`extractor.ts:236-258` against `imageFetch.ts:41-98`), so an image can pass one and fail the other. | client, code |
 | 26 | An adapter converts each feed event into the extractor's seven-field input and passes the results back in the shape the cards need. The fields and their sources are in section 10. | The feed's field names differ from what the extractor expects (`types.ts:1-9`). | client, code |
+| 27 | Module boundaries are as in section 12. The shared image check lives in the URL safety validator module. The ZIP is built in the browser from images fetched through the image proxy. The feed is fetched by our server, not the browser. | One image check is needed (decision 25) and a separate module would add nothing. A browser-built ZIP never passes through a Vercel response, which sidesteps the open size-limit question. Whether the feed allows browser requests (CORS) is untested, so server-side is the safe default. | client |
 
 ## 5. Out of scope for v1
 
@@ -192,3 +193,117 @@ Each gap is checked against the three files. No slice plan exists yet, so the ow
 **Open items**
 - Whether Vercel limits the size of a response (which could affect the image proxy and the ZIP download) has not been checked.
 - No slice plan exists, so no gap has an owning slice yet.
+
+## 12. Modules and interfaces
+
+Each module's purpose, public interface, what it hides, and who calls it. Decision 27 settles the placement choices below. Feed field names `date` (a `YYYY-MM-DD` string) and `tags` (an array of strings) were checked against the live feed on 2026-10-14.
+
+Shared types:
+
+```ts
+type FeedEvent   = { id: string; title: string; url: string; date: string; tags: string[]; starred: boolean };
+type EventCard   = { id: string; title: string; url: string; date: string; tags: string[] }; // one per event link (decision 7)
+type ImageResult = { status: "resolved"; imageUrl: string } | { status: "failed"; reason: string };
+type DateWindow  = { start: string; end: string }; // YYYY-MM-DD
+```
+
+### 12.1 Auth gate
+- **Purpose:** Lets people in only with the shared password (decision 18).
+- **Interface:**
+  ```ts
+  verifyPassword(attempt: string): boolean
+  startSession(): string                    // value for the session cookie
+  isAuthenticated(req: Request): boolean
+  ```
+- **Hides:** the password setting, how the comparison is done, and how the cookie is signed and expires.
+- **Called by:** the login route, and the middleware that guards every page and every `/api/*` route.
+
+### 12.2 Feed client
+- **Purpose:** Fetches the TEG feed and returns events in our own shape.
+- **Interface:**
+  ```ts
+  fetchFeed(): Promise<FeedEvent[]>
+  ```
+- **Hides:** the feed address, its raw field names (`misha-star` becomes `starred`; `featured`, `overlay` and `cap` are dropped), and parse errors.
+- **Called by:** the `/api/events` route, so the browser never talks to the feed directly (decision 27).
+
+### 12.3 Date window and starred filter
+- **Purpose:** Turns the feed into the cards on screen. Pure functions, with no network.
+- **Interface:**
+  ```ts
+  defaultWindow(today: Date): DateWindow                      // today to +14
+  clampWindow(w: DateWindow, today: Date): DateWindow         // max +30
+  buildCards(feed: FeedEvent[], w: DateWindow): EventCard[]   // starred only, one per url, earliest date in window, soonest first
+  tagOptions(cards: EventCard[]): string[]                    // computed before any tag is picked (decision 3)
+  filterByTags(cards: EventCard[], tags: string[]): EventCard[] // match ANY
+  ```
+- **Hides:** the rules in decisions 1 to 7, including that "today" comes from the browser and that `past` is ignored.
+- **Called by:** the page. It is also the easiest module to unit-test.
+
+### 12.4 Adapter
+- **Purpose:** Runs the extractor for one card and returns a card-shaped result (decisions 22 and 26).
+- **Interface:**
+  ```ts
+  findImageForCard(card: EventCard): Promise<ImageResult>
+  ```
+- **Hides:** the seven-field mapping from section 10, that the extractor takes and returns lists, and the `instagramHandle` it produces and we ignore.
+- **Called by:** the `/api/find-image` route. The browser calls that route about 5 at a time.
+
+### 12.5 Extractor (copied from Task 1)
+- **Purpose:** Finds an event's image from its web page.
+- **Interface:** Unchanged from Task 1: `extractImagesAndHandles(items: EventItem[]): Promise<ExtractionResult[]>`, with `EventItem` and `ExtractionResult` from `types.ts`. The exact signature is copied verbatim from the Task 1 file.
+- **Hides:** the search order (embedded image, og:image, Twitter image, JSON-LD, `<img>`), the logo and size filters, and the failure reasons.
+- **Called by:** the adapter only.
+- **Only edits:** its own image check is replaced by a call to `fetchImage` (12.6), and the page HTML read gets a size cap (section 11).
+
+### 12.6 URL safety validator and shared image check
+- **Purpose:** The one place that decides whether a URL is safe to fetch and whether what comes back is an image (decisions 24 and 25).
+- **Interface:**
+  ```ts
+  assertSafeUrl(raw: string): Promise<URL>   // throws UnsafeUrlError
+  fetchImage(raw: string, opts?: { readBody?: boolean }):
+    Promise<{ ok: true; contentType: string; bytes?: Uint8Array } | { ok: false; reason: string }>
+  ```
+- **Hides:** the http(s)-only rule, private and loopback address ranges, DNS lookup, re-checking every redirect, the `image/*` requirement, the 8 MB cap, the 8 s timeout, and the user agent.
+- **Called by:** the image proxy, the paste-URL checker and the extractor.
+
+### 12.7 Image proxy
+- **Purpose:** Serves event images from our own server so the source site's blocking can't break display (decision 16).
+- **Interface:** `GET /api/image?url=...`, implemented as
+  ```ts
+  proxyImage(rawUrl: string): Promise<Response>
+  ```
+- **Hides:** the upstream fetch, the headers we send, the cache headers we return, and how errors map to status codes.
+- **Called by:** every card `<img>`, the larger view, and the download module.
+
+### 12.8 Paste-URL checker
+- **Purpose:** Confirms a link Amanda pasted is really an image (decision 15).
+- **Interface:** `POST /api/check-image`, implemented as
+  ```ts
+  checkPastedImage(raw: string): Promise<{ ok: true; imageUrl: string } | { ok: false; reason: string }>
+  ```
+- **Hides:** what counts as "really an image". Leaving the card unchanged on failure is the page's job.
+- **Called by:** the card's paste box.
+
+### 12.9 Download and ZIP
+- **Purpose:** Downloads the selected images as one file or a ZIP (decisions 11 to 13). Runs in the browser (decision 27).
+- **Interface:**
+  ```ts
+  downloadSelected(items: { date: string; title: string; imageUrl: string }[]): Promise<void>
+  fileNameFor(item: { date: string; title: string }, contentType: string): string // "2026-10-07_tinker-tuesday.jpg"
+  ```
+- **Hides:** the slug rules, the file extension (taken from the response Content-Type, which fixes the `.php` gap in section 11), duplicate-name handling, one image versus ZIP, and the ZIP library.
+- **Called by:** the Download button.
+
+### Dependencies
+
+```
+page -> 12.3, 12.9
+page -> /api/events -> 12.1 -> 12.2
+page -> /api/find-image -> 12.4 -> 12.5 -> 12.6
+card <img>, lightbox, 12.9 -> 12.7 -> 12.6
+paste box -> /api/check-image -> 12.8 -> 12.6
+```
+
+### Not modules
+The page components, the selection store (decisions 9 and 10) and the browser image cache (decision 23) are UI state, not separate modules.
