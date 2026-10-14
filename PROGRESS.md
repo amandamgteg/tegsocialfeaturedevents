@@ -86,7 +86,7 @@ Copy this and fill it in:
 - Pictures are looked up 5 at a time, so they appear one by one.
 - Kept the 8 MB limit, as you chose. Vercel will not send back more than 4.5 MB in one normal go, so the relay sends pictures in a stream instead, which Vercel says has no such limit. I tested this on my side with a real 5.5 MB photo and it worked. It still needs one check once the tool is on Vercel.
 - If your browser cannot show a picture for any reason, the card quietly switches to the event link.
-- Wrote 139 automatic checks in total across issues 1 and 2 (before issue 3), all passing. I also ran it for real in a browser against the live list. For today through 14 days out, 13 events appeared and 12 found a picture. The one without a picture shows the event link.
+- Wrote 147 automatic checks in total across issues 1 and 2, all passing. I also ran it for real in a browser against the live list. For today through 14 days out, 13 events appeared and 12 found a picture. The one without a picture shows the event link.
 
 **What you can see or try:**
 - Not yet on the internet. Once it is on Vercel, log in and watch the pictures appear.
@@ -108,7 +108,7 @@ Copy this and fill it in:
 - If a remembered picture later stops loading, the tool forgets it, treats the card as missing a picture, and the Retry button can fix it.
 - Nothing is stored on our side. Everything remembered lives in your own browser.
 - Fixed a bug my own checks found while building this: after a successful retry, a card could keep hiding its new picture.
-- Wrote 42 more automatic checks (181 in total), all passing. In a real browser against the live list, the Retry button appeared for the card with no picture, and a reload only looked up the cards that had no remembered picture.
+- Wrote 34 more automatic checks (181 in total), all passing. In a real browser against the live list, the Retry button appeared for the card with no picture, and a reload only looked up the cards that had no remembered picture.
 
 **What you can see or try:**
 - Not yet on the internet. Once it is: reload the page and the pictures show instantly. A card with no picture has a Retry button above the cards.
