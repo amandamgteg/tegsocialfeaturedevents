@@ -21,5 +21,8 @@ export async function POST(req: Request) {
     date: typeof c.date === "string" ? c.date : "",
     tags: Array.isArray(c.tags) ? (c.tags as string[]) : [],
   });
-  return Response.json(result);
+  // Only a found image is cacheable. A failed lookup should be tried again next time.
+  return Response.json(result, {
+    headers: { "cache-control": result.status === "resolved" ? "private, max-age=86400" : "no-store" },
+  });
 }

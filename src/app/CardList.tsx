@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventCard, ImageResult } from "@/lib/types";
 
 export type ImageState = "loading" | ImageResult;
@@ -32,8 +32,27 @@ function CardImage({ card, state, broken, onBroken }: { card: EventCard; state: 
   return <div data-testid="image-placeholder" style={{ background: "#e5e5e5", height: 140, borderRadius: 6 }} />;
 }
 
-export function CardList({ cards, images }: { cards: EventCard[]; images?: ImageStates }) {
+type Props = {
+  cards: EventCard[];
+  images?: ImageStates;
+  onRetry?: () => void;
+  onImageError?: (cardId: string) => void;
+};
+
+export function CardList({ cards, images, onRetry, onImageError }: Props) {
   const [broken, setBroken] = useState<Set<string>>(new Set());
+
+  // Once a card is no longer showing a resolved image (it failed, or is being retried), forget
+  // that the browser couldn't display its old image, so a fresh result gets a fair try.
+  useEffect(() => {
+    setBroken((prev) => {
+      const keep = [...prev].filter((id) => {
+        const s = images?.[id];
+        return s && s !== "loading" && s.status === "resolved";
+      });
+      return keep.length === prev.size ? prev : new Set(keep);
+    });
+  }, [images]);
   if (cards.length === 0) return <p>No starred events in this date range.</p>;
 
   const found = plural(cards.length, "event found", "events found");
@@ -44,9 +63,19 @@ export function CardList({ cards, images }: { cards: EventCard[]; images?: Image
       }).length
     : 0;
 
+  const anyFailed = !!images && cards.some((c) => {
+    const s = images[c.id];
+    return s && s !== "loading" && s.status === "failed";
+  });
+
   return (
     <>
       <p>{images ? `${found} · ${plural(loaded, "image loaded", "images loaded")}` : found}</p>
+      {anyFailed && onRetry && (
+        <p>
+          <button type="button" onClick={onRetry}>Retry failed images</button>
+        </p>
+      )}
       <ul style={{ listStyle: "none", padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         {cards.map((c) => (
           <li key={c.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
@@ -54,7 +83,10 @@ export function CardList({ cards, images }: { cards: EventCard[]; images?: Image
               card={c}
               state={images?.[c.id]}
               broken={broken.has(c.id)}
-              onBroken={() => setBroken((prev) => new Set(prev).add(c.id))}
+              onBroken={() => {
+                setBroken((prev) => new Set(prev).add(c.id));
+                onImageError?.(c.id);
+              }}
             />
             <p style={{ margin: "8px 0 0", color: "#555" }}>{c.date}</p>
             <h2 style={{ fontSize: 16, margin: "4px 0" }}>{c.title}</h2>

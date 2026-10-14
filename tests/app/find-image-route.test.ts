@@ -34,4 +34,15 @@ describe("POST /api/find-image", () => {
     expect((await post({ title: "x" })).status).toBe(400);
     expect(find).not.toHaveBeenCalled();
   });
+
+  it("marks a resolved result as cacheable", async () => {
+    find.mockResolvedValue({ status: "resolved", imageUrl: "https://img.example.com/a.jpg" });
+    const res = await post(card);
+    expect(res.headers.get("cache-control")).toMatch(/max-age=[1-9]\d*/);
+  });
+  it("does not mark a failed result as cacheable", async () => {
+    find.mockResolvedValue({ status: "failed", reason: "nothing" });
+    const res = await post(card);
+    expect(res.headers.get("cache-control") ?? "").not.toMatch(/max-age=[1-9]/);
+  });
 });
