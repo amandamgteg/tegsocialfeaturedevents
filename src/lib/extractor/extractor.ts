@@ -1,5 +1,5 @@
 import type { EventItem, ExtractionResult } from "./types";
-import { fetchImage, readTextCapped } from "../safeUrl";
+import { fetchImage, fetchPage, readTextCapped } from "../safeUrl";
 
 type ImageCandidate = {
   url: string;
@@ -279,7 +279,7 @@ export async function extractImagesAndHandles(events: EventItem[]): Promise<Extr
         continue;
       }
 
-      const response = await fetch(event.eventUrl, {
+      const response = await fetchPage(event.eventUrl, {
         headers: { "user-agent": "TEG/0.1 image extractor" },
         cache: "no-store",
         signal: AbortSignal.timeout(8000)

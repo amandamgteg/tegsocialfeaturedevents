@@ -192,7 +192,7 @@ Each gap is checked against the three files. No slice plan exists yet, so the ow
 
 **Open items**
 - Vercel limit, checked 2026-10-14 (issue 2): a Vercel Function cannot send back more than 4.5 MB in one normal response, but streamed responses do not have that limit (Vercel's own docs). Amanda chose to keep the 8 MB cap (decision 24). The image proxy therefore streams the image. This has only been tested locally, where a real 5.5 MB photo came through. It still needs one check on the deployed site, with an image between 4.5 and 8 MB. If Vercel does block it, the card falls back to the event link (a broken image becomes the link) and we revisit the cap.
-- The extractor fetches the event page itself, and that fetch follows redirects without re-checking each hop (the shared check covers every image fetch, and the adapter checks the event address before the page fetch). Closing it needs a third edit to the copied extractor, so it is left for a decision.
+- Closed 2026-10-14: the extractor's event page fetch now checks every redirect hop (`fetchPage`), as a third documented edit to the copied extractor.
 - No slice plan exists, so no gap has an owning slice yet.
 
 ## 12. Modules and interfaces
@@ -255,7 +255,7 @@ type DateWindow  = { start: string; end: string }; // YYYY-MM-DD
 - **Interface:** Unchanged from Task 1: `extractImagesAndHandles(items: EventItem[]): Promise<ExtractionResult[]>`, with `EventItem` and `ExtractionResult` from `types.ts`. The exact signature is copied verbatim from the Task 1 file.
 - **Hides:** the search order (embedded image, og:image, Twitter image, JSON-LD, `<img>`), the logo and size filters, and the failure reasons.
 - **Called by:** the adapter only.
-- **Only edits:** its own image check is replaced by a call to `fetchImage` (12.6), and the page HTML read gets a size cap (section 11).
+- **Only edits:** its own image check is replaced by a call to `fetchImage` (12.6), the page HTML read gets a size cap (section 11), and the event page fetch becomes `fetchPage` (12.6), which checks the address and every redirect (added 2026-10-14 with Amanda's approval).
 
 ### 12.6 URL safety validator and shared image check
 - **Purpose:** The one place that decides whether a URL is safe to fetch and whether what comes back is an image (decisions 24 and 25).

@@ -146,3 +146,24 @@ describe("extractor: instagram handle", () => {
     expect(r.instagramHandle).toBe("tinkerto");
   });
 });
+
+describe("extractor: event page redirects", () => {
+  it("follows a safe redirect to the real page", async () => {
+    stubFetch((url) => {
+      if (url === PAGE) return new Response(null, { status: 301, headers: { location: "https://events.example.com/moved" } });
+      if (url === "https://events.example.com/moved") return htmlResponse(`<meta property="og:image" content="${A}">`);
+      return url === A ? imageResponse("image/jpeg") : new Response("", { status: 404 });
+    });
+    expect((await extractImagesAndHandles([item()]))[0]).toMatchObject({ status: "resolved", imageUrl: A });
+  });
+  it("fails, without requesting it, when the page redirects to a private address", async () => {
+    const f = stubFetch((url) =>
+      url === PAGE ? new Response(null, { status: 302, headers: { location: "http://169.254.169.254/latest/meta-data" } }) : htmlResponse("SECRET"),
+    );
+    const [r] = await extractImagesAndHandles([item()]);
+    expect(r.status).toBe("failed");
+    expect(r.failureReason).toMatch(/private/i);
+    expect(f.mock.calls.map((c) => c[0])).not.toContain("http://169.254.169.254/latest/meta-data");
+  });
+});
+

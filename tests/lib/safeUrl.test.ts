@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("node:dns/promises", () => ({ lookup: vi.fn() }));
 import { lookup } from "node:dns/promises";
-import { assertSafeUrl, fetchImage, UnsafeUrlError } from "@/lib/safeUrl";
-import { stubFetch, imageResponse, redirectTo, chunkedBody, PNG } from "../helpers/net";
+import { assertSafeUrl, fetchImage, fetchPage, UnsafeUrlError } from "@/lib/safeUrl";
+import { stubFetch, imageResponse, htmlResponse, redirectTo, chunkedBody, PNG } from "../helpers/net";
 
 const dns = vi.mocked(lookup) as unknown as ReturnType<typeof vi.fn>;
 const PUBLIC = [{ address: "93.184.216.34", family: 4 }];
@@ -232,3 +232,34 @@ describe("fetchImage", () => {
     expect(headers.get("referer")).toBeNull();
   });
 });
+
+describe("fetchPage (event pages, with every redirect checked)", () => {
+  it("returns the page response", async () => {
+    stubFetch(() => htmlResponse("<p>hi</p>"));
+    const res = await fetchPage("https://example.com/page", { headers: { "user-agent": "x" } });
+    expect(await res.text()).toBe("<p>hi</p>");
+  });
+  it("follows a safe redirect", async () => {
+    stubFetch((url) => (url.endsWith("/a") ? redirectTo("https://example.com/b") : htmlResponse("final")));
+    expect(await (await fetchPage("https://example.com/a")).text()).toBe("final");
+  });
+  it("refuses a redirect to a private address and never requests it", async () => {
+    const f = stubFetch((url) => (url.includes("example.com") ? redirectTo("http://169.254.169.254/latest") : htmlResponse("SECRET")));
+    await expect(fetchPage("https://example.com/a")).rejects.toBeInstanceOf(UnsafeUrlError);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+  it("refuses an unsafe starting address without fetching", async () => {
+    const f = stubFetch(() => htmlResponse("x"));
+    await expect(fetchPage("http://127.0.0.1/admin")).rejects.toBeInstanceOf(UnsafeUrlError);
+    expect(f).not.toHaveBeenCalled();
+  });
+  it("gives up on a redirect loop", async () => {
+    stubFetch(() => redirectTo("https://example.com/again"));
+    await expect(fetchPage("https://example.com/again")).rejects.toThrow(/redirect/i);
+  });
+  it("passes a non-redirect error status through, so the extractor can report it", async () => {
+    stubFetch(() => new Response("gone", { status: 404 }));
+    expect((await fetchPage("https://example.com/a")).status).toBe(404);
+  });
+});
+

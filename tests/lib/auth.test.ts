@@ -33,7 +33,7 @@ describe("startSession and isAuthenticated", () => {
   it("rejects a tampered cookie", () => {
     const [expiry, sig] = startSession().split(".");
     expect(isAuthenticated(reqWithCookie(`${Number(expiry) + 1000}.${sig}`))).toBe(false);
-    expect(isAuthenticated(reqWithCookie(`${expiry}.${sig.slice(0, -1)}0`))).toBe(false);
+    expect(isAuthenticated(reqWithCookie(`${expiry}.${sig.slice(0, -1)}${sig.endsWith("0") ? "1" : "0"}`))).toBe(false);
     expect(isAuthenticated(reqWithCookie("garbage"))).toBe(false);
   });
   it("rejects a cookie signed for a different password", () => {

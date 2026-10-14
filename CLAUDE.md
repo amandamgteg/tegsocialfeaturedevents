@@ -37,7 +37,7 @@ tests/             all tests and test fixtures, mirroring src/
 - "Today" is the browser's date, not the feed's `today`.
 - Cards show date, title, tags and image only. No description, time or venue.
 - Images shown to the user come through our own `/api/image` proxy, never directly from the source site.
-- The image extractor is copied verbatim from Task 1 (SPEC section 9). Do not rewrite it. Only the two documented edits are allowed.
+- The image extractor is copied verbatim from Task 1 (SPEC section 9). Do not rewrite it. Only the three documented edits are allowed (SPEC section 12.5).
 - Never invent sample-data modes in the product (decision 19). Test fixtures belong only in `tests/`.
 - Desktop browser only.
 

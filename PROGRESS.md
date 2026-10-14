@@ -121,3 +121,21 @@ Copy this and fill it in:
 - Approve fixing one of my own earlier checks. It is the issue 1 check "rejects a tampered cookie". About 1 time in 16 it wrongly fails, because of how it scrambles the login cookie. The tool itself is fine. The rule is that I need your approval to change a saved check. The fix is to scramble the cookie in a way that always changes it.
 - Create the Vercel project and set the TEG_PASSWORD setting (from issue 1), so you can see all of this live.
 
+### 2026-10-14 · Follow-ups from your answers
+**Status:** Done on my side.
+
+**What got done:**
+- Fixed my own flawed check ("rejects a tampered cookie"). It no longer fails by accident. The login itself was never affected.
+- Closed the redirect gap. When the tool opens an event's web page, it now checks every stop along the way, so a bad link can no longer send it to something inside our own server. This was a third change to the copied picture-finding code. I wrote the checks first, added the change, and updated the plan (SPEC.md) and CLAUDE.md to say three changes are allowed.
+- Wrote 8 more automatic checks (189 in total), all passing.
+- You said to carry on with how found pictures are remembered (remembered in your own browser by event address). I did not see a problem with it, so it stays as built.
+
+**What you can see or try:**
+- Nothing new on screen.
+
+**What is still waiting:**
+- Putting the tool on Vercel. You said later.
+
+**Needs from Amanda:**
+- Nothing right now.
+

@@ -254,3 +254,20 @@ export async function readTextCapped(response: Response, maxBytes = MAX_PAGE_BYT
   }
   return new TextDecoder().decode(all);
 }
+
+/**
+ * Fetches an event page like `fetch`, but checks the address and every redirect hop first.
+ * Throws UnsafeUrlError for a private address. Error statuses come back as normal responses.
+ */
+export async function fetchPage(raw: string, init: RequestInit = {}): Promise<Response> {
+  let url = await assertSafeUrl(raw);
+  for (let hop = 0; ; hop++) {
+    const response = await fetch(url.toString(), { ...init, redirect: "manual" });
+    if (response.status < 300 || response.status >= 400) return response;
+    const location = response.headers.get("location");
+    await response.body?.cancel();
+    if (!location) return response;
+    if (hop >= MAX_REDIRECTS) throw new Error("too many redirects");
+    url = await assertSafeUrl(new URL(location, url).toString());
+  }
+}
