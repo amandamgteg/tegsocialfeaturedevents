@@ -1,4 +1,5 @@
 import type { EventItem, ExtractionResult } from "./types";
+import { fetchImage, readTextCapped } from "../safeUrl";
 
 type ImageCandidate = {
   url: string;
@@ -206,11 +207,6 @@ function buildImageCandidates(event: EventItem, html?: string) {
   return candidates;
 }
 
-function isImageLikeContentType(contentType: string | null) {
-  if (!contentType) return true;
-  return contentType.toLowerCase().startsWith("image/");
-}
-
 function isInstagramCdnUrl(url: string) {
   try {
     const host = new URL(url).hostname.toLowerCase();
@@ -234,27 +230,7 @@ function extractInstagramHandle(html: string) {
 }
 
 async function validateImageUrl(url: string) {
-  const headers = {
-    accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-    "user-agent": "TEG/0.1 image extractor"
-  };
-
-  for (const method of ["HEAD", "GET"] as const) {
-    try {
-      const response = await fetch(url, {
-        method,
-        headers,
-        cache: "no-store",
-        signal: AbortSignal.timeout(6000)
-      });
-
-      if (response.ok && isImageLikeContentType(response.headers.get("content-type"))) return true;
-    } catch {
-      continue;
-    }
-  }
-
-  return false;
+  return (await fetchImage(url)).ok;
 }
 
 async function firstValidImage(candidates: ImageCandidate[]) {
@@ -313,7 +289,7 @@ export async function extractImagesAndHandles(events: EventItem[]): Promise<Extr
         throw new Error(`site returned ${response.status}`);
       }
 
-      const html = await response.text();
+      const html = await readTextCapped(response);
       const handleFromHtml = extractInstagramHandle(html);
       const candidates = buildImageCandidates(event, html);
       const resolved = await firstValidImage(candidates);
