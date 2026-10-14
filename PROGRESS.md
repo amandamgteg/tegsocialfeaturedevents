@@ -57,8 +57,8 @@ Copy this and fill it in:
 - Create the Vercel project from this GitHub project.
 - In Vercel's settings, add a setting called TEG_PASSWORD and give it the password you choose. Do not type the password into any file or message.
 
-### 2026-10-14 · Issue 2: Pictures fill in
-**Status:** Not started. Paused on purpose, as you asked.
+### 2026-10-14 · Issue 2: Pictures fill in (earlier entry, replaced by the next one)
+**Status:** Out of date. This was written while issue 2 was paused. Issue 2 was finished afterwards, so read the next entry instead.
 
 **What got done:**
 - Nothing built yet.
@@ -289,4 +289,33 @@ Copy this and fill it in:
 **Needs from Amanda:**
 - Put the tool on Vercel: create the Vercel project from this GitHub project, and add a setting called TEG_PASSWORD with the password you choose. I can walk you through it step by step if you say "walk me through Vercel".
 - Then open it on your own laptop and try it (checklist item 15). Tell me what you see and I will re-run the 15 items on the real site and update `TESTING.md`.
+
+### 2026-10-14 · Decisions you made, and housekeeping
+**Status:** Recorded, so nothing lives only in the chat.
+
+**Decisions you made today:**
+- **Picture size limit:** keep 8 MB, as the plan said. (I had suggested 4 MB because of Vercel's 4.5 MB limit. Pictures are sent in a stream to get around it. That still needs one check once the tool is on Vercel.)
+- **Redirect gap:** close it now. Done in the follow-ups entry above.
+- **My flawed login check:** fix it. Done in the follow-ups entry above.
+- **How found pictures are remembered:** you said to carry on as built (in your own browser, by event address).
+- **"From" date:** it can be any date, including past days. It stays as built.
+- **When a download partly fails:** keep it as it is (option A). You get the pictures that worked, plus a red message naming the ones that failed.
+- **Where work is saved:** everything goes straight to the `main` branch on GitHub. The note saying so is the first line of CLAUDE.md.
+- **Extractor files:** you uploaded the three earlier-project files, and I filed them in the project's code folder.
+
+**Housekeeping:**
+- **Branches:** all the work is on `main`, and `main` matches GitHub exactly. The old branch `claude/practical-dirac-rknumi` is no longer needed and can be deleted. I never touched the branch `claude/teg-event-selector-84ay3j`.
+- **Three test files nobody claimed:** while I was working, three automatic-check files appeared in the project folder that I did not write (a larger-picture-view one, and two that overlapped with what I built). You did not know whose they were either. I did not use them or save them to GitHub. I moved them, unchanged, to a temporary folder in my workspace: `/tmp/claude-0/-home-user-tegsocialfeaturedevents/84726ace-9097-57cf-b585-c33962d6018b/scratchpad/unclaimed-tests/`. That folder disappears when this session ends. If they turn out to be someone's real work, say so before then and I will save them.
+- **Test counts:** 372 automatic checks, all passing, as of the end of issue 9.
+- **Done and pushed:** issues 1 to 9. Issue 10 is partly done (see its entry).
+
+**What is still waiting (summary):**
+- Put the tool on Vercel and set the TEG_PASSWORD setting.
+- Then you try it on your own laptop, and I re-run the 15-item checklist on the real site and finish issue 10.
+- One check on Vercel only: a picture between 4.5 MB and 8 MB.
+
+**Needs from Amanda:**
+- Create the Vercel project and set TEG_PASSWORD (say "walk me through Vercel" for steps).
+- Try the tool on your own laptop and tell me what you see.
+- Tell me soon if the three unclaimed test files are someone's.
 
