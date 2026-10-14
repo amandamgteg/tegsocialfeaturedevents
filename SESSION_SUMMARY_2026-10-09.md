@@ -1,6 +1,6 @@
 # TEG Social Event Picker: Session Summary for India
 
-**Date:** 2026-10-09 · **Who:** Amanda and Claude · **Branch:** `claude/festive-feynman-rj9tsw`
+**Date:** 2026-10-09 · **Who:** Amanda and Claude · **Branch:** `main`
 
 ## What we did
 
@@ -56,3 +56,7 @@
 1. **For India:** are the new decisions 22 to 26 okay?
 2. **For India:** what slices will the work be split into, so the known gaps can be assigned?
 3. **For Amanda:** should the pasted website-test notes and the feed-count update go into the spec once re-checked?
+
+## Update, 2026-10-14
+
+- All work now lives on one branch, `main`. It holds `SPEC.md` and both session summaries.

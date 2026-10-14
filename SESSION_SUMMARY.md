@@ -6,7 +6,7 @@
 
 - Read India's Task 2 brief, then ran a question-by-question grill with Amanda on everything in v1.
 - Checked the live events feed against the brief.
-- Wrote the v1 spec: `SPEC.md`, pushed to GitHub on branch `claude/teg-event-selector-84ay3j`. It has the problem, what the tool does, the step-by-step use, 21 decisions with reasons, what's out of scope, a "done" checklist, and a separate list of things deferred.
+- Wrote the v1 spec: `SPEC.md`, pushed to GitHub (now on the single `main` branch). It has the problem, what the tool does, the step-by-step use, 21 decisions with reasons, what's out of scope, a "done" checklist, and a separate list of things deferred.
 - No code was written.
 
 ## Where Amanda changed the brief
@@ -43,7 +43,7 @@
 - "Event type" means the feed's `tags`, with multiple tags matching ANY. Amanda confirmed this as final, with no check with Misha needed.
 - The tag filter buttons come from the date window's results, before any tag is picked. They stay the same while tags are picked.
 - Amanda sets the shared password and decides who gets it.
-- No pull request for now. `SPEC.md` and this summary stay on the branch `claude/teg-event-selector-84ay3j`.
+- No pull request for now. `SPEC.md` and this summary stay on the `main` branch.
 
 ## Open questions
 
