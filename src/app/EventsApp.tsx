@@ -4,6 +4,7 @@ import { buildCards, clampWindow, defaultWindow, filterByTags, tagOptions } from
 import type { DateWindow, EventCard, FeedEvent, ImageResult } from "@/lib/types";
 import { CardList, type ImageStates } from "./CardList";
 import { DateRangePicker, TagFilter } from "./Filters";
+import type { PasteResult } from "./PasteBox";
 import { forgetCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
 import { hiddenSelectedCount, toggleSelected } from "./selection";
@@ -90,6 +91,24 @@ export function EventsApp() {
     setImagesByUrl((prev) => ({ ...prev, [card.url]: { status: "failed", reason: "the image could not be displayed" } }));
   };
 
+  // A pasted link is checked by the server first. A refusal changes nothing (decision 15).
+  const pasteImage = async (card: EventCard, link: string): Promise<PasteResult> => {
+    try {
+      const res = await fetch("/api/check-image", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: link }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const result = (await res.json()) as { ok: true; imageUrl: string } | { ok: false; reason: string };
+      if (!result.ok) return { ok: false, reason: result.reason };
+      setImagesByUrl((prev) => ({ ...prev, [card.url]: { status: "resolved", imageUrl: result.imageUrl } }));
+      return { ok: true };
+    } catch {
+      return { ok: false, reason: "Couldn't check that link. Please try again." };
+    }
+  };
+
   const changeWindow = (w: DateWindow) => setWindow(clampWindow(w, today));
 
   if (error) return <p>{error}</p>;
@@ -105,6 +124,7 @@ export function EventsApp() {
         onImageError={imageBroken}
         selectedUrls={selected}
         hiddenSelected={hiddenSelectedCount(selected, visible)}
+        onPasteImage={pasteImage}
         onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
       />
     </>

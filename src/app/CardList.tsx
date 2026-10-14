@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { EventCard, ImageResult } from "@/lib/types";
 import { Lightbox } from "./Lightbox";
+import { PasteBox, type PasteResult } from "./PasteBox";
 import { selectionLabel } from "./selection";
 
 export type ImageState = "loading" | ImageResult;
@@ -14,7 +15,7 @@ const proxiedUrl = (imageUrl: string) => `/api/image?url=${encodeURIComponent(im
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-function CardImage({ card, state, broken, onBroken, onOpen }: { card: EventCard; state: ImageState | undefined; broken: boolean; onBroken: () => void; onOpen: () => void }) {
+function CardImage({ card, state, broken, onBroken, onOpen, onPasteImage }: { card: EventCard; state: ImageState | undefined; broken: boolean; onBroken: () => void; onOpen: () => void; onPasteImage?: (card: EventCard, link: string) => Promise<PasteResult> }) {
   if (state && state !== "loading" && state.status === "resolved" && !broken) {
     // Always through our own server, never straight from the source site (decision 16).
     return (
@@ -34,15 +35,7 @@ function CardImage({ card, state, broken, onBroken, onOpen }: { card: EventCard;
       </button>
     );
   }
-  if (state && state !== "loading") {
-    return (
-      <div style={{ height: 140, borderRadius: 6, background: "#f3f3f3", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <a href={card.url} target="_blank" rel="noopener noreferrer">
-          Open event page
-        </a>
-      </div>
-    );
-  }
+  if (state && state !== "loading") return <PasteBox card={card} onPasteImage={onPasteImage} />;
   return <div data-testid="image-placeholder" style={{ background: "#e5e5e5", height: 140, borderRadius: 6 }} />;
 }
 
@@ -54,9 +47,10 @@ type Props = {
   selectedUrls?: ReadonlySet<string>;
   hiddenSelected?: number;
   onToggleSelect?: (card: EventCard) => void;
+  onPasteImage?: (card: EventCard, link: string) => Promise<PasteResult>;
 };
 
-export function CardList({ cards, images, onRetry, onImageError, selectedUrls, hiddenSelected = 0, onToggleSelect }: Props) {
+export function CardList({ cards, images, onRetry, onImageError, selectedUrls, hiddenSelected = 0, onToggleSelect, onPasteImage }: Props) {
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -117,6 +111,7 @@ export function CardList({ cards, images, onRetry, onImageError, selectedUrls, h
               state={images?.[c.id]}
               broken={broken.has(c.id)}
               onOpen={() => setOpenId(c.id)}
+              onPasteImage={onPasteImage}
               onBroken={() => {
                 setBroken((prev) => new Set(prev).add(c.id));
                 onImageError?.(c.id);
