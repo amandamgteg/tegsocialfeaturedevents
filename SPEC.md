@@ -131,11 +131,19 @@ Things we discussed and deliberately left out, so they aren't lost.
 
 ## 8. Live feed facts checked on 2026-09-30
 
+*Historic: these are the numbers from 2026-09-30 and are kept as a record of the first check. A refreshed set from 2026-10-14 follows below, and `TESTING.md` has the full test record.*
+
 - The feed was built on 2026-09-27 and covers 2026-08-30 to 2026-11-08, with 1,288 events.
 - 96 events are starred (76 by hand and 20 automatically, per the feed's own summary). The brief said 49.
 - 46 starred events are dated 2026-09-27 or later, on 39 different event links. 36 of them are dated 2026-09-30 or later. About half are weekly series such as Tinker Tuesday, Hot Breath Karaoke and Curiosity Café.
 - The brief says upcoming means `past === false`. In the live feed, `past` is either `true` or missing, and is never `false`. Using the brief's rule would show no events at all. That is why decision 5 uses dates.
 - For the default window (2026-09-30 to 2026-10-14), there are 28 starred events on 25 different event links. That is inside the brief's estimate of 10 to 30.
+
+**Refreshed on 2026-10-14** (feed built 2026-10-11, covering 2026-09-13 to 2026-11-22):
+- 1,533 events, of which 87 are starred (`featured` still matches `misha-star` exactly). The `past` field is still `true` or missing, never `false`, so dates are still the right test.
+- For the default window (2026-10-14 to 2026-10-28) there are 15 starred events on 13 different event links. 12 of the 13 links gave an image. See `TESTING.md`.
+- 73 different links are starred across the whole feed.
+- The feed still has the extra `overlay` and `cap` fields. We ignore them.
 
 ## 9. Reused from Task 1
 

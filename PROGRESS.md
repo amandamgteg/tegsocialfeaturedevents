@@ -246,3 +246,47 @@ Copy this and fill it in:
 **Needs from Amanda:**
 - Nothing for the code. The plan did not say how to report a failed download, so I made one small addition to SPEC.md (section 12.9): the tool saves what it can, then names the pictures that failed. Tell me if you want that to work differently.
 
+### 2026-10-14 · Issue 9: Remember picks across refreshes, and Start over
+**Status:** Done on my side. Not live on the internet yet.
+
+**What got done:**
+- Your picks and any pictures you pasted are now remembered in your own browser. Refresh or close the page and they are still there.
+- A "Start over" button clears your picks and your pasted pictures. It does not clear the pictures the tool found by itself, so those still show up straight away after a refresh. The button is greyed out when there is nothing to clear. It does not change your dates or tag filters.
+- Pasted pictures come back without being checked again. A card with a pasted picture is not looked up again either.
+- If an event has left the TEG list (or is no longer starred), it quietly drops out of your saved picks. A pick for an event outside the dates you are looking at is kept, so changing the dates and back never loses it. It can still be downloaded.
+- If your browser will not remember things, or holds scrambled data, the page just loads normally with nothing picked.
+- If a remembered picture later stops working, the card goes back to the link and the paste box. The pasted picture is forgotten.
+- I used the "open point" from the plan as written: pasted pictures were checked once, and are not checked again on load.
+- Wrote the automatic checks first, then built until they passed (372 in total, all passing).
+
+**What you can see or try:**
+- Not yet on the internet. In a real browser against the live list: I picked 2, pasted a picture on a third, refreshed, and everything was still there. Start over cleared it, and it stayed cleared after another refresh.
+
+**What is still waiting:**
+- Putting the tool on Vercel.
+
+**Needs from Amanda:**
+- Nothing. (One small choice I made: an event that Misha un-stars counts as "gone" and drops out of your saved picks, the same as an event that leaves the list.)
+
+### 2026-10-14 · Issue 10: Walkthrough and test record
+**Status:** Partly done. This one cannot be finished until the tool is on Vercel and you have tried it.
+
+**What got done:**
+- Wrote `TESTING.md` in the project. It has all 15 items from the plan's "done" checklist, each run in a real browser, a table of every one of the 13 starred links in today's dates (not a sample), the success rate by website, failures grouped by cause, and notes on the Vercel size limit.
+- Results: 14 of the 15 items passed. The 15th (you using it on your own laptop with no code on your computer) needs you. One part of item 2 cannot be tested: Bad Class: Drake vs Kendrick was on Oct 1, which has passed.
+- Picture finding: 12 of the 13 links found a picture. The one that did not is a Toronto Public Library page that has no picture on it.
+- Pressed Retry on that real failing card. It tried only that card, it failed again for the same reason, and nothing else changed.
+- Refreshed the numbers in the plan (SPEC.md section 8), keeping the old numbers marked as historic.
+- Found no product bugs in this walkthrough.
+
+**What you can see or try:**
+- Open `TESTING.md` in the project on GitHub.
+
+**What is still waiting:**
+- Everything in `TESTING.md` was run on a copy of the finished tool in my workspace, not on Vercel. The plan asks for it to be run on the real Vercel site. That needs the tool put on Vercel first.
+- One check only works on Vercel: a picture between 4.5 MB and 8 MB (the ROM event photo is about 5.5 MB). Vercel's size limit might block it. If it does, the card falls back to the link and we lower the limit to 4 MB.
+
+**Needs from Amanda:**
+- Put the tool on Vercel: create the Vercel project from this GitHub project, and add a setting called TEG_PASSWORD with the password you choose. I can walk you through it step by step if you say "walk me through Vercel".
+- Then open it on your own laptop and try it (checklist item 15). Tell me what you see and I will re-run the 15 items on the real site and update `TESTING.md`.
+
