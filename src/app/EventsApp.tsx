@@ -5,9 +5,10 @@ import type { DateWindow, EventCard, FeedEvent, ImageResult } from "@/lib/types"
 import { CardList, type ImageStates } from "./CardList";
 import { DateRangePicker, TagFilter } from "./Filters";
 import type { PasteResult } from "./PasteBox";
-import { forgetCachedImage } from "./imageCache";
+import { forgetCachedImage, readCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
 import { downloadSelected, PartialDownloadError } from "@/lib/download";
+import { clearPicks, loadPicks, restorePicks, savePicks } from "./picks";
 import { hiddenSelectedCount, selectedDownloadItems, toggleSelected } from "./selection";
 
 async function findImage(card: EventCard): Promise<ImageResult> {
@@ -27,12 +28,16 @@ export function EventsApp() {
   const [feed, setFeed] = useState<FeedEvent[] | null>(null);
   const [window, setWindow] = useState<DateWindow>(() => defaultWindow(today));
   const [pickedTags, setPickedTags] = useState<string[]>([]);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [stored] = useState(() => loadPicks()); // what was saved in this browser last time
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set(stored.selected));
+  const [pasted, setPasted] = useState<Record<string, string>>(stored.pasted); // event url -> pasted image link
   // Image state is kept by event URL, because a card's id can change when the window changes.
-  const [imagesByUrl, setImagesByUrl] = useState<ImageStates>({});
+  const [imagesByUrl, setImagesByUrl] = useState<ImageStates>(() =>
+    Object.fromEntries(Object.entries(stored.pasted).map(([url, imageUrl]) => [url, { status: "resolved" as const, imageUrl }])),
+  );
   const [error, setError] = useState<string | null>(null);
   const fetched = useRef(false);
-  const requested = useRef(new Set<string>()); // urls already looked up (or being looked up)
+  const requested = useRef(new Set(Object.keys(stored.pasted))); // urls already looked up, or pasted (no lookup needed)
   const knownCards = useRef(new Map<string, EventCard>()); // every card seen, so selections outside the window can still be downloaded
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -56,7 +61,24 @@ export function EventsApp() {
     fetched.current = true;
     fetch("/api/events")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
-      .then((data: FeedEvent[]) => setFeed(data))
+      .then((data: FeedEvent[]) => {
+        // Every starred event is known by url, so a pick outside the window can still be named and downloaded.
+        for (const e of [...data].sort((a, b) => b.date.localeCompare(a.date))) {
+          if (e.starred) knownCards.current.set(e.url, { id: e.id, title: e.title, url: e.url, date: e.date, tags: e.tags });
+        }
+        const restored = restorePicks(stored, data, buildCards(data, window), readCachedImage);
+        setSelected(restored.selected);
+        setPasted(restored.pasted);
+        setImagesByUrl((prev) => {
+          const next = { ...prev };
+          for (const url of restored.selected) {
+            const image = restored.pasted[url] ?? readCachedImage(url);
+            if (!next[url] && image) next[url] = { status: "resolved", imageUrl: image };
+          }
+          return next;
+        });
+        setFeed(data);
+      })
       .catch(() => setError("Couldn't load events. Please refresh and try again."));
   }, []);
 
@@ -82,6 +104,20 @@ export function EventsApp() {
     });
   }, [imagesByUrl]);
 
+  // Remember picks and pasted images in this browser (decision 10).
+  useEffect(() => {
+    savePicks({ selected: [...selected], pasted });
+  }, [selected, pasted]);
+
+  const startOver = () => {
+    const pastedUrls = Object.keys(pasted);
+    setSelected(new Set());
+    setPasted({});
+    clearPicks();
+    // A card that was fixed by a pasted image goes back to having no image. Found images stay cached.
+    setImagesByUrl((prev) => ({ ...prev, ...Object.fromEntries(pastedUrls.map((u) => [u, { status: "failed" as const, reason: "pasted image removed" }])) }));
+  };
+
   const retry = () => {
     const failed = visible.filter((c) => isFailed(imagesByUrl[c.url]));
     setImagesByUrl((prev) => ({ ...prev, ...Object.fromEntries(failed.map((c) => [c.url, "loading" as const])) }));
@@ -93,6 +129,7 @@ export function EventsApp() {
     const card = windowCards.find((c) => c.id === id);
     if (!card) return;
     forgetCachedImage(card.url);
+    setPasted(({ [card.url]: _gone, ...rest }) => rest);
     setImagesByUrl((prev) => ({ ...prev, [card.url]: { status: "failed", reason: "the image could not be displayed" } }));
   };
 
@@ -108,6 +145,7 @@ export function EventsApp() {
       const result = (await res.json()) as { ok: true; imageUrl: string } | { ok: false; reason: string };
       if (!result.ok) return { ok: false, reason: result.reason };
       setImagesByUrl((prev) => ({ ...prev, [card.url]: { status: "resolved", imageUrl: result.imageUrl } }));
+      setPasted((prev) => ({ ...prev, [card.url]: result.imageUrl }));
       return { ok: true };
     } catch {
       return { ok: false, reason: "Couldn't check that link. Please try again." };
@@ -137,6 +175,9 @@ export function EventsApp() {
       <p>
         <button type="button" onClick={download} disabled={selected.size === 0 || downloading}>
           {downloading ? "Preparing download…" : "Download selected images"}
+        </button>{" "}
+        <button type="button" onClick={startOver} disabled={selected.size === 0 && Object.keys(pasted).length === 0}>
+          Start over
         </button>
       </p>
       {downloadError && <p role="alert" style={{ color: "#b00020" }}>{downloadError}</p>}
