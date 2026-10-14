@@ -21,3 +21,27 @@ export function buildCards(feed: FeedEvent[], w: DateWindow): EventCard[] {
     .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title))
     .map(({ id, title, url, date, tags }) => ({ id, title, url, date, tags }));
 }
+
+const MAX_DAYS_AHEAD = 30; // decision 4
+
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+/** Only the end is limited to today+30. The start can be any earlier date. A window is never backwards. */
+export function clampWindow(w: DateWindow, today: Date): DateWindow {
+  const max = ymd(addDays(today, MAX_DAYS_AHEAD));
+  const start = w.start > max ? max : w.start;
+  let end = w.end > max ? max : w.end;
+  if (end < start) end = start;
+  return { start, end };
+}
+
+/** The tags in these cards, sorted. Worked out before any tag is picked (decision 3). */
+export function tagOptions(cards: EventCard[]): string[] {
+  return [...new Set(cards.flatMap((c) => c.tags))].sort((a, b) => a.localeCompare(b));
+}
+
+/** No tags means everything. Several tags match ANY of them (decision 2). */
+export function filterByTags(cards: EventCard[], tags: string[]): EventCard[] {
+  if (tags.length === 0) return cards;
+  return cards.filter((c) => c.tags.some((t) => tags.includes(t)));
+}

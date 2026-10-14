@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { buildCards, defaultWindow } from "@/lib/window";
-import type { EventCard, FeedEvent, ImageResult } from "@/lib/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { buildCards, clampWindow, defaultWindow, filterByTags, tagOptions } from "@/lib/window";
+import type { DateWindow, EventCard, FeedEvent, ImageResult } from "@/lib/types";
 import { CardList, type ImageStates } from "./CardList";
+import { DateRangePicker, TagFilter } from "./Filters";
 import { forgetCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
+import { hiddenSelectedCount, toggleSelected } from "./selection";
 
 async function findImage(card: EventCard): Promise<ImageResult> {
   const res = await fetch("/api/find-image", {
@@ -16,49 +18,95 @@ async function findImage(card: EventCard): Promise<ImageResult> {
   return (await res.json()) as ImageResult;
 }
 
+const isFailed = (s: ImageStates[string] | undefined) => !!s && s !== "loading" && s.status === "failed";
+
 export function EventsApp() {
-  const [cards, setCards] = useState<EventCard[] | null>(null);
-  const [images, setImages] = useState<ImageStates>({});
+  const [today] = useState(() => new Date()); // the browser's date (decision 5)
+  const [feed, setFeed] = useState<FeedEvent[] | null>(null);
+  const [window, setWindow] = useState<DateWindow>(() => defaultWindow(today));
+  const [pickedTags, setPickedTags] = useState<string[]>([]);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  // Image state is kept by event URL, because a card's id can change when the window changes.
+  const [imagesByUrl, setImagesByUrl] = useState<ImageStates>({});
   const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
-  const imagesRef = useRef<ImageStates>({});
-  imagesRef.current = images;
+  const fetched = useRef(false);
+  const requested = useRef(new Set<string>()); // urls already looked up (or being looked up)
 
-  const record = (id: string, result: ImageResult) => setImages((prev) => ({ ...prev, [id]: result }));
+  const windowCards = useMemo(() => (feed ? buildCards(feed, window) : []), [feed, window]);
+  const options = useMemo(() => tagOptions(windowCards), [windowCards]);
+  const tags = pickedTags.filter((t) => options.includes(t));
+  const visible = useMemo(() => filterByTags(windowCards, tags), [windowCards, tags.join("\n")]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const retry = () => {
-    if (!cards) return;
-    const current = imagesRef.current;
-    const failed = cards.filter((c) => {
-      const s = current[c.id];
-      return s && s !== "loading" && s.status === "failed";
-    });
-    setImages((prev) => ({ ...prev, ...Object.fromEntries(failed.map((c) => [c.id, "loading" as const])) }));
-    void retryFailed(cards, current, findImage, record);
-  };
+  const imagesFor = (cards: EventCard[]): ImageStates =>
+    Object.fromEntries(cards.flatMap((c) => (imagesByUrl[c.url] ? [[c.id, imagesByUrl[c.url]]] : [])));
 
-  // The browser could not display this image (stale or blocked), so treat it as failed and forget it.
-  const imageBroken = (id: string) => {
-    const card = cards?.find((c) => c.id === id);
-    if (card) forgetCachedImage(card.url);
-    record(id, { status: "failed", reason: "the image could not be displayed" });
+  const recorder = (cards: EventCard[]) => {
+    const urlOf = new Map(cards.map((c) => [c.id, c.url]));
+    return (id: string, result: ImageResult) => setImagesByUrl((prev) => ({ ...prev, [urlOf.get(id)!]: result }));
   };
 
   useEffect(() => {
-    if (started.current) return; // React dev mode runs effects twice; look each image up once
-    started.current = true;
+    if (fetched.current) return; // React dev mode runs effects twice
+    fetched.current = true;
     fetch("/api/events")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
-      .then((feed: FeedEvent[]) => {
-        const built = buildCards(feed, defaultWindow(new Date()));
-        setCards(built);
-        setImages(Object.fromEntries(built.map((c) => [c.id, "loading" as const])));
-        void lookupCards(built, findImage, record);
-      })
+      .then((data: FeedEvent[]) => setFeed(data))
       .catch(() => setError("Couldn't load events. Please refresh and try again."));
   }, []);
 
+  // Every starred event in the window gets a lookup, not only her picks (decision 14). Each url once.
+  useEffect(() => {
+    const fresh = windowCards.filter((c) => !requested.current.has(c.url));
+    if (fresh.length === 0) return;
+    fresh.forEach((c) => requested.current.add(c.url));
+    setImagesByUrl((prev) => ({ ...Object.fromEntries(fresh.map((c) => [c.url, "loading" as const])), ...prev }));
+    void lookupCards(fresh, findImage, recorder(fresh));
+  }, [windowCards]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the picked tags to the ones still on offer, so a stale pick can't come back later.
+  useEffect(() => {
+    setPickedTags((prev) => (prev.every((t) => options.includes(t)) ? prev : prev.filter((t) => options.includes(t))));
+  }, [options]);
+
+  // A selected card that can no longer be downloaded is deselected.
+  useEffect(() => {
+    setSelected((prev) => {
+      const keep = [...prev].filter((url) => !isFailed(imagesByUrl[url]));
+      return keep.length === prev.size ? prev : new Set(keep);
+    });
+  }, [imagesByUrl]);
+
+  const retry = () => {
+    const failed = visible.filter((c) => isFailed(imagesByUrl[c.url]));
+    setImagesByUrl((prev) => ({ ...prev, ...Object.fromEntries(failed.map((c) => [c.url, "loading" as const])) }));
+    void retryFailed(visible, imagesFor(visible), findImage, recorder(visible));
+  };
+
+  // The browser could not display this image (stale or blocked): treat it as failed and forget it.
+  const imageBroken = (id: string) => {
+    const card = windowCards.find((c) => c.id === id);
+    if (!card) return;
+    forgetCachedImage(card.url);
+    setImagesByUrl((prev) => ({ ...prev, [card.url]: { status: "failed", reason: "the image could not be displayed" } }));
+  };
+
+  const changeWindow = (w: DateWindow) => setWindow(clampWindow(w, today));
+
   if (error) return <p>{error}</p>;
-  if (!cards) return <p>Loading events…</p>;
-  return <CardList cards={cards} images={images} onRetry={retry} onImageError={imageBroken} />;
+  if (!feed) return <p>Loading events…</p>;
+  return (
+    <>
+      <DateRangePicker window={window} today={today} onChange={changeWindow} />
+      <TagFilter options={options} selected={tags} onChange={setPickedTags} />
+      <CardList
+        cards={visible}
+        images={imagesFor(visible)}
+        onRetry={retry}
+        onImageError={imageBroken}
+        selectedUrls={selected}
+        hiddenSelected={hiddenSelectedCount(selected, visible)}
+        onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
+      />
+    </>
+  );
 }

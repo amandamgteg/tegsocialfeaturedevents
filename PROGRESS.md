@@ -139,3 +139,45 @@ Copy this and fill it in:
 **Needs from Amanda:**
 - Nothing right now.
 
+### 2026-10-14 · Issue 4: Date pickers and tag filter
+**Status:** Done on my side. Not live on the internet yet.
+
+**What got done:**
+- Added two calendar pickers, "From" and "To". They start at today and 14 days ahead. The "To" date cannot go past 30 days ahead. If you type a later date, it is pulled back to 30 days. If "To" is before "From", it is set to match "From".
+- The "From" date can be any date, even in the past. You did not say otherwise, so I used the plan's default. Tell me if it should be limited to today or later.
+- Added tag buttons. They list the tags that appear in the chosen dates, in alphabetical order. Picking several shows events with any of them.
+- Picking a tag does not remove the other tag buttons. Changing the dates updates the buttons. A tag you picked that no longer appears is dropped.
+- The top line always matches the cards on screen. For example "7 events found · 5 images loaded".
+- Newly visible events get their pictures looked up, and ones already looked up are not looked up again. A multi-day event stays one card.
+- Wrote the automatic checks first, then built until they passed.
+
+**What you can see or try:**
+- Not yet on the internet. I ran it for real in a browser against the live list. Widening to 30 days went from 13 to 18 events. Picking one tag showed 6, and adding a second showed 7.
+
+**What is still waiting:**
+- Putting the tool on Vercel (you said later).
+
+**Needs from Amanda:**
+- Nothing.
+
+### 2026-10-14 · Issue 5: Select events
+**Status:** Done on my side. Not live on the internet yet.
+
+**What got done:**
+- Cards with a picture now have a "Select" box. Cards with no picture, or still loading, have no box.
+- A line shows the running count, for example "3 selected" or "3 selected (1 hidden by filters)". The part in brackets only shows when something is hidden. There is no limit on how many you can pick.
+- Picks are remembered by the event's web address, not by the card. So changing the dates or tags never loses a pick, even for a multi-day event whose card changes.
+- Picks hidden by a tag or by a date change stay picked and are counted as hidden.
+- If a picked card's picture later stops working, it is quietly unpicked, because it could not be downloaded.
+- In the real browser: I picked 3 events, filtered to a tag that hid them, and it said "3 selected (3 hidden by filters)". Clearing the filter brought them back, still picked. Cards with no picture had no box.
+
+**What you can see or try:**
+- Not yet on the internet.
+
+**What is still waiting:**
+- Putting the tool on Vercel.
+- Picks are lost if you refresh the page. That is issue 9.
+
+**Needs from Amanda:**
+- Please check on something that happened. While I was working, three test files that I did not write appeared in the project folder: `tests/app/lightbox.test.tsx`, `tests/app/selection.test.tsx` and `tests/lib/window-filters.test.ts`. Two cover issues 4 and 5 and now pass (I matched their wording "From" for the start date). The third is for issue 6 (the larger picture view), which you did not ask me to build, so its 5 checks fail. I did not change or delete any of them, and I left all three out of what I saved to GitHub. Please tell me if they are yours, and whether I should save them.
+

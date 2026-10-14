@@ -1,9 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { EventCard, ImageResult } from "@/lib/types";
+import { selectionLabel } from "./selection";
 
 export type ImageState = "loading" | ImageResult;
 export type ImageStates = Record<string, ImageState>;
+
+// Only a card with a found image can be selected (decision 15).
+const selectable = (s: ImageState | undefined) => !!s && s !== "loading" && s.status === "resolved";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -37,9 +41,12 @@ type Props = {
   images?: ImageStates;
   onRetry?: () => void;
   onImageError?: (cardId: string) => void;
+  selectedUrls?: ReadonlySet<string>;
+  hiddenSelected?: number;
+  onToggleSelect?: (card: EventCard) => void;
 };
 
-export function CardList({ cards, images, onRetry, onImageError }: Props) {
+export function CardList({ cards, images, onRetry, onImageError, selectedUrls, hiddenSelected = 0, onToggleSelect }: Props) {
   const [broken, setBroken] = useState<Set<string>>(new Set());
 
   // Once a card is no longer showing a resolved image (it failed, or is being retried), forget
@@ -53,7 +60,15 @@ export function CardList({ cards, images, onRetry, onImageError }: Props) {
       return keep.length === prev.size ? prev : new Set(keep);
     });
   }, [images]);
-  if (cards.length === 0) return <p>No starred events in this date range.</p>;
+  const selectedLine = selectedUrls ? <p>{selectionLabel(selectedUrls.size, hiddenSelected)}</p> : null;
+  if (cards.length === 0) {
+    return (
+      <>
+        {selectedLine}
+        <p>No starred events in this date range.</p>
+      </>
+    );
+  }
 
   const found = plural(cards.length, "event found", "events found");
   const loaded = images
@@ -71,6 +86,7 @@ export function CardList({ cards, images, onRetry, onImageError }: Props) {
   return (
     <>
       <p>{images ? `${found} · ${plural(loaded, "image loaded", "images loaded")}` : found}</p>
+      {selectedLine}
       {anyFailed && onRetry && (
         <p>
           <button type="button" onClick={onRetry}>Retry failed images</button>
@@ -78,7 +94,10 @@ export function CardList({ cards, images, onRetry, onImageError }: Props) {
       )}
       <ul style={{ listStyle: "none", padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
         {cards.map((c) => (
-          <li key={c.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
+          <li
+            key={c.id}
+            style={{ border: selectedUrls?.has(c.url) ? "2px solid #222" : "1px solid #ddd", borderRadius: 8, padding: 12 }}
+          >
             <CardImage
               card={c}
               state={images?.[c.id]}
@@ -88,6 +107,17 @@ export function CardList({ cards, images, onRetry, onImageError }: Props) {
                 onImageError?.(c.id);
               }}
             />
+            {onToggleSelect && selectable(images?.[c.id]) && !broken.has(c.id) && (
+              <label style={{ display: "block", marginTop: 8 }}>
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${c.title}`}
+                  checked={selectedUrls?.has(c.url) ?? false}
+                  onChange={() => onToggleSelect(c)}
+                />{" "}
+                Select
+              </label>
+            )}
             <p style={{ margin: "8px 0 0", color: "#555" }}>{c.date}</p>
             <h2 style={{ fontSize: 16, margin: "4px 0" }}>{c.title}</h2>
             <p style={{ margin: 0 }}>
