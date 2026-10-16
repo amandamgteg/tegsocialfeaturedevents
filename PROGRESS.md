@@ -319,3 +319,31 @@ Copy this and fill it in:
 - Try the tool on your own laptop and tell me what you see.
 - Tell me soon if the three unclaimed test files are someone's.
 
+
+### 2026-10-16 · New look from the design file
+**Status:** Done and checked. All 382 automatic checks pass and the production build works.
+
+**What got done:**
+- The design file is saved in the project at `design/teg-event-picker-design-i.html`, so it lives next to the code.
+- The tool now looks like that design: dark teal page with amber accents, the banner at the top, four numbered steps, picture cards with a date badge and a big "+ Pick" button, and the "Your photo wall" panel on the right where picks get pinned as pictures. The Download button lives in that panel.
+- The banner photo is saved as a normal picture file (`public/hero.webp`), not packed inside the page.
+- The login page matches the new look.
+- No existing automatic check was changed. I added 10 new ones for the photo wall and the new look.
+
+**What you can see or try:**
+- Open the tool, pick a couple of events, and watch them pin to the photo wall. The × on a pinned picture removes it.
+
+**Small differences from the design, on purpose:**
+- The count in the photo wall says "2 selected", not "2 picked", and keeps the "hidden by filters" wording. The existing checks need that wording.
+- Dates also exist as hidden text in the 2026-10-15 form for the same reason. What you see is the design's "THU OCT 15".
+- "Retry failed images" only shows when something has failed (the design always showed it).
+- The design has icons for 8 tags. The real feed has others (games, intimacy, nerdy, outdoors, talky), which get a small dot until you choose icons for them.
+- Fonts come from Google Fonts. If they can't load, the page falls back to a plain font.
+- Phone layout is still not a goal (desktop only).
+
+**What is still waiting:**
+- Vercel setup, and re-running the 15-item checklist on the real site (see the entries above).
+
+**Needs from Amanda:**
+- Pick icons for games, intimacy, nerdy, outdoors and talky, if you want them.
+- Tell me if you want the "picked" wording instead of "selected" (it would mean changing a few existing checks, which needs your OK).

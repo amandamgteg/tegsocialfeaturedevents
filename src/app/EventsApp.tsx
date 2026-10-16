@@ -3,13 +3,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { buildCards, clampWindow, defaultWindow, filterByTags, tagOptions } from "@/lib/window";
 import type { DateWindow, EventCard, FeedEvent, ImageResult } from "@/lib/types";
 import { CardList, type ImageStates } from "./CardList";
-import { DateRangePicker, TagFilter } from "./Filters";
+import { DateRangePicker, TagStep } from "./Filters";
+import { PhotoWall, type WallItem } from "./PhotoWall";
 import type { PasteResult } from "./PasteBox";
 import { forgetCachedImage, readCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
 import { downloadSelected, PartialDownloadError } from "@/lib/download";
 import { clearPicks, loadPicks, restorePicks, savePicks } from "./picks";
-import { hiddenSelectedCount, selectedDownloadItems, toggleSelected } from "./selection";
+import { hiddenSelectedCount, selectedDownloadItems, selectionLabel, toggleSelected } from "./selection";
 
 async function findImage(card: EventCard): Promise<ImageResult> {
   const res = await fetch("/api/find-image", {
@@ -166,31 +167,56 @@ export function EventsApp() {
 
   const changeWindow = (w: DateWindow) => setWindow(clampWindow(w, today));
 
-  if (error) return <p>{error}</p>;
-  if (!feed) return <p>Loading events…</p>;
+  const wallItems: WallItem[] = [...selected]
+    .flatMap((url) => {
+      const card = knownCards.current.get(url);
+      const state = imagesByUrl[url];
+      return card && state && state !== "loading" && state.status === "resolved" ? [{ card, imageUrl: state.imageUrl }] : [];
+    })
+    .sort((a, b) => a.card.date.localeCompare(b.card.date) || a.card.title.localeCompare(b.card.title));
+
+  const note = { color: "#cfe3e1", padding: 24 } as const;
+  if (error) return <p style={note}>{error}</p>;
+  if (!feed) return <p style={note}>Loading events…</p>;
   return (
-    <>
-      <DateRangePicker window={window} today={today} onChange={changeWindow} />
-      <TagFilter options={options} selected={tags} onChange={setPickedTags} />
-      <p>
-        <button type="button" onClick={download} disabled={selected.size === 0 || downloading}>
-          {downloading ? "Preparing download…" : "Download selected images"}
-        </button>{" "}
-        <button type="button" onClick={startOver} disabled={selected.size === 0 && Object.keys(pasted).length === 0}>
-          Start over
-        </button>
-      </p>
-      {downloadError && <p role="alert" style={{ color: "#b00020" }}>{downloadError}</p>}
-      <CardList
-        cards={visible}
-        images={imagesFor(visible)}
-        onRetry={retry}
-        onImageError={imageBroken}
-        selectedUrls={selected}
-        hiddenSelected={hiddenSelectedCount(selected, visible)}
-        onPasteImage={pasteImage}
-        onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
-      />
-    </>
+    <div style={{ maxWidth: 1312, margin: "0 auto", padding: "28px 24px 60px", display: "flex", flexDirection: "column", gap: 22 }}>
+      <section style={{ background: "#123540", border: "1.5px dashed #6fa3a6", borderRadius: 18, padding: "20px 24px", display: "flex", flexWrap: "wrap", gap: "24px 36px", alignItems: "center" }}>
+        <DateRangePicker window={window} today={today} onChange={changeWindow} />
+        <TagStep options={options} selected={tags} onChange={setPickedTags} />
+      </section>
+      {downloadError && <p role="alert" style={{ color: "#ffb4a0" }}>{downloadError}</p>}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" }}>
+        <div style={{ flex: "1 1 560px", minWidth: 0 }}>
+          <CardList
+            cards={visible}
+            images={imagesFor(visible)}
+            onRetry={retry}
+            onImageError={imageBroken}
+            selectedUrls={selected}
+            hiddenSelected={hiddenSelectedCount(selected, visible)}
+            hideSelectedLine
+            onPasteImage={pasteImage}
+            onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
+            actions={
+              <button
+                type="button"
+                onClick={startOver}
+                disabled={selected.size === 0 && Object.keys(pasted).length === 0}
+                style={{ fontSize: 14, padding: "0 16px", minHeight: 44, borderRadius: 999, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}
+              >
+                Start over
+              </button>
+            }
+          />
+        </div>
+        <PhotoWall
+          items={wallItems}
+          label={selectionLabel(selected.size, hiddenSelectedCount(selected, visible))}
+          downloading={downloading}
+          onRemove={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
+          onDownload={download}
+        />
+      </div>
+    </div>
   );
 }
