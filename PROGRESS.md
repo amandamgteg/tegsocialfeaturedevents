@@ -337,7 +337,7 @@ Copy this and fill it in:
 - The count in the photo wall says "2 selected", not "2 picked", and keeps the "hidden by filters" wording. The existing checks need that wording.
 - Dates also exist as hidden text in the 2026-10-15 form for the same reason. What you see is the design's "THU OCT 15".
 - "Retry failed images" only shows when something has failed (the design always showed it).
-- The design has icons for 8 tags. The real feed has others (games, intimacy, nerdy, outdoors, talky), which get a small dot until you choose icons for them.
+- The design has icons for 8 tags. The real feed has five more, which now have icons too: games (game controller), intimacy (heart), nerdy (glasses), outdoors (mountain and sun), talky (loudspeaker). Any future tag with no icon gets a small dot.
 - Fonts come from Google Fonts. If they can't load, the page falls back to a plain font.
 - Phone layout is still not a goal (desktop only).
 
@@ -345,5 +345,4 @@ Copy this and fill it in:
 - Vercel setup, and re-running the 15-item checklist on the real site (see the entries above).
 
 **Needs from Amanda:**
-- Pick icons for games, intimacy, nerdy, outdoors and talky, if you want them.
-- Tell me if you want the "picked" wording instead of "selected" (it would mean changing a few existing checks, which needs your OK).
+- Nothing. You decided to keep "selected" (2026-10-16).
