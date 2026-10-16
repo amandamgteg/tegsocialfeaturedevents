@@ -363,3 +363,23 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Nothing
+
+### 2026-10-16 · Check: starred events missing from the tool
+**Status:** Done (answer found, nothing to fix in the tool)
+
+**What got done:**
+- Looked into why two starred events did not show up for Oct 19 to Oct 26: IRID Community Dinner #1 "On Learning" (Oct 21) and Disco Descendants Halloween Family Rave (Oct 25, first thought to be Oct 28).
+- Found that neither event is in the Toronto Event Generator list that the tool reads. That list says it was last updated on Oct 11, and the events were most likely added or starred after that. This is a likely cause, not a confirmed one.
+- The tool itself is working as designed: it shows every starred event the list contains.
+- Wrote a short email to India asking whether she knows how the list gets updated. India cannot change the list. Misha can.
+- Housekeeping: confirmed everything is on the main branch, and from now on work is pushed to main only.
+
+**What you can see or try:**
+- Nothing new in the tool. Once the Toronto Event Generator list is republished with the stars on, both events should appear by themselves, with no change to the tool.
+
+**What is still waiting:**
+- Finding out how the Toronto Event Generator list gets updated (automatic, or something Misha triggers), and getting it republished.
+- Then re-checking that both events show up.
+
+**Needs from Amanda:**
+- Send the email to India, and bring the missing events to Misha so the list can be republished.
