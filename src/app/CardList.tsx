@@ -162,7 +162,9 @@ export function CardList({ cards, images, onRetry, onImageError, selectedUrls, h
                 </div>
                 {picked && canPick && <Star size={46} pop style={{ position: "absolute", right: -10, top: -16, filter: "drop-shadow(0 3px 0 #0007)" }} />}
               </div>
-              <h2 style={{ fontSize: 17, lineHeight: 1.15, fontWeight: 600 }}>{c.title}</h2>
+              <h2 style={{ fontSize: 17, lineHeight: 1.15, fontWeight: 600 }}>
+                <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textDecorationColor: "#4d8185", textUnderlineOffset: 3 }}>{c.title}</a>
+              </h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                 {c.tags.map((t) => (
                   <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, padding: "2px 9px 2px 6px", borderRadius: 999, background: "#0d2830", border: "1px solid #4d8185", color: "#cfe3e1" }}>

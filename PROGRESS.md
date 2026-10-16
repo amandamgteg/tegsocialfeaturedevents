@@ -346,3 +346,20 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Nothing. You decided to keep "selected" (2026-10-16).
+
+### 2026-10-16 · Change request: event titles are links
+**Status:** Done
+
+**What got done:**
+- The title on each main card is now a link to that event's page, and it always opens in a new tab.
+- Clicking a title only opens the page. It does not pick the card or enlarge the image.
+- Titles in the photo wall are unchanged, as you asked.
+
+**What you can see or try:**
+- Click any event title on a card. The event page opens in a new tab and your picks and filters stay as they were.
+
+**What is still waiting:**
+- Nothing
+
+**Needs from Amanda:**
+- Nothing
