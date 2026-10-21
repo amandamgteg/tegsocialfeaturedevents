@@ -17,8 +17,10 @@ export async function POST(req: Request) {
   const result = await findImageForCard({
     id: c.id,
     title: c.title,
+    key: c.url,
     url: c.url,
     date: typeof c.date === "string" ? c.date : "",
+    dates: typeof c.date === "string" ? [c.date] : [],
     tags: Array.isArray(c.tags) ? (c.tags as string[]) : [],
   });
   // Only a found image is cacheable. A failed lookup should be tried again next time.

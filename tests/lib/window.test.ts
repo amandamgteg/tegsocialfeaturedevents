@@ -9,6 +9,7 @@ const ev = (over: Partial<FeedEvent> = {}): FeedEvent => ({
   date: "2026-10-20",
   tags: ["x"],
   starred: true,
+  recurring: false,
   ...over,
 });
 const W = { start: "2026-10-14", end: "2026-10-28" };
@@ -37,14 +38,34 @@ describe("buildCards", () => {
     const feed = [ev({ id: "s", url: "u1", date: "2026-10-14" }), ev({ id: "e", url: "u2", date: "2026-10-28" })];
     expect(buildCards(feed, W).map((c) => c.id)).toEqual(["s", "e"]);
   });
-  it("collapses repeated urls into one card using the first date in the window and that date's id", () => {
+  it("shows a repeating event as one card per date, each with its own id and key", () => {
+    const feed = [
+      ev({ id: "w1", date: "2026-10-21", recurring: true }),
+      ev({ id: "w2", date: "2026-10-28", recurring: true }),
+      ev({ id: "w0", date: "2026-10-07", recurring: true }),
+    ];
+    expect(buildCards(feed, W)).toEqual([
+      { id: "w1", key: "https://example.com/a#2026-10-21", title: "A", url: "https://example.com/a", date: "2026-10-21", dates: ["2026-10-21"], tags: ["x"] },
+      { id: "w2", key: "https://example.com/a#2026-10-28", title: "A", url: "https://example.com/a", date: "2026-10-28", dates: ["2026-10-28"], tags: ["x"] },
+    ]);
+  });
+  it("shows a non-repeating event with a shared link as one card listing every date in the window", () => {
     const feed = [
       ev({ id: "before", date: "2026-10-10" }),
-      ev({ id: "third", date: "2026-10-22" }),
-      ev({ id: "first-in", date: "2026-10-20", tags: ["y"] }),
+      ev({ id: "day2", date: "2026-10-22", tags: ["z"] }),
+      ev({ id: "day1", date: "2026-10-21", tags: ["y"] }),
     ];
-    const cards = buildCards(feed, W);
-    expect(cards).toEqual([{ id: "first-in", title: "A", url: "https://example.com/a", date: "2026-10-20", tags: ["y"] }]);
+    expect(buildCards(feed, W)).toEqual([
+      { id: "day1", key: "https://example.com/a", title: "A", url: "https://example.com/a", date: "2026-10-21", dates: ["2026-10-21", "2026-10-22"], tags: ["y"] },
+    ]);
+  });
+  it("lists only the dates inside the window for a non-repeating event", () => {
+    const feed = [ev({ id: "in", date: "2026-10-28" }), ev({ id: "out", date: "2026-11-04" })];
+    expect(buildCards(feed, W)[0].dates).toEqual(["2026-10-28"]);
+  });
+  it("keeps a repeating series and an unrelated one-off with the same link apart by the repeating flag", () => {
+    const feed = [ev({ id: "a", date: "2026-10-20", recurring: true }), ev({ id: "b", date: "2026-10-21", recurring: true })];
+    expect(buildCards(feed, W)).toHaveLength(2);
   });
   it("sorts soonest first", () => {
     const feed = [

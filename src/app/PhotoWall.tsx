@@ -1,6 +1,6 @@
 "use client";
 import type { EventCard } from "@/lib/types";
-import { dateLabel, MONO, Star, StepBadge, TagIcon } from "./design";
+import { datesLabel, MONO, Star, StepBadge, TagIcon } from "./design";
 
 export type WallItem = { card: EventCard; imageUrl: string };
 
@@ -27,7 +27,7 @@ export function PhotoWall({ items, label, downloading, onRemove, onDownload }: {
             <img src={proxiedUrl(imageUrl)} alt="" style={{ display: "block", width: "100%", aspectRatio: "16/10", objectFit: "cover" }} />
             <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginTop: 6 }}>
               <div style={{ flex: 1, minWidth: 0, color: "#0d2830" }}>
-                <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#8a4a00" }}>{dateLabel(card.date)}</div>
+                <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: "#8a4a00" }}>{datesLabel(card.dates)}</div>
                 <div style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.2 }}>{card.title}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 6 }}>
                   {card.tags.map((t) => (

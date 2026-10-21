@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { toggleSelected, hiddenSelectedCount, selectionLabel } from "@/app/selection";
 import type { EventCard } from "@/lib/types";
 
-const card = (i: number): EventCard => ({ id: `id${i}`, title: `T${i}`, url: `https://e.com/${i}`, date: "2026-10-20", tags: [] });
+const card = (i: number): EventCard => ({ id: `id${i}`, title: `T${i}`, key: `https://e.com/${i}`, url: `https://e.com/${i}`, date: "2026-10-20", dates: ["2026-10-20"], tags: [] });
 
 describe("toggleSelected", () => {
   it("adds and removes by event url", () => {

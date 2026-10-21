@@ -383,3 +383,21 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Send the email to India, and bring the missing events to Misha so the list can be republished.
+
+### 2026-10-21 · Fix: missing weekly events (Hot Breath Karaoke)
+**Status:** Done
+
+**What got done:**
+- Found why Hot Breath Karaoke on Oct 28, Nov 11 and Nov 18 were missing: the tool treated every event with the same website link as one event and showed only the first date.
+- Weekly, every-two-weeks, monthly and yearly events now get a card for each date, and you can pick each date on its own.
+- Other events that share a link, such as the days of a festival, still show as one card, now listing all their dates (for example "Sat Nov 7 – Sun Nov 8").
+- Updated SPEC.md (decision 7 and the related lines) and the matching tests, with your approval.
+
+**What you can see or try:**
+- Hot Breath Karaoke shows as a separate card for each Wednesday in the date range. Widen the range to see Nov 11 and Nov 18.
+
+**What is still waiting:**
+- Picks saved in the browser before this change for a weekly event may be dropped once, because they are now saved per date.
+- No festival is starred in the feed right now, so the "one card, several dates" case is tested only with test data.
+
+**Needs from Amanda:** Nothing

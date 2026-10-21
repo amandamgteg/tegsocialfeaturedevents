@@ -23,6 +23,7 @@ describe("fetchFeed", () => {
         date: "2026-10-20",
         tags: ["making"],
         starred: true,
+        recurring: false,
       },
     ]);
   });
@@ -38,6 +39,14 @@ describe("fetchFeed", () => {
     delete (raw as Record<string, unknown>)["misha-star"];
     respond({ events: [raw] });
     expect((await fetchFeed())[0].starred).toBe(false);
+  });
+  it("marks an event as recurring when the feed gives a recurrence such as weekly or biweekly", async () => {
+    respond({ events: [rawEvent({ recurrence: "weekly" }), rawEvent({ recurrence: "biweekly" }), rawEvent({ recurrence: null })] });
+    expect((await fetchFeed()).map((e) => e.recurring)).toEqual([true, true, false]);
+  });
+  it("does not treat an unrecognised recurrence value as recurring", async () => {
+    respond({ events: [rawEvent({ recurrence: "Etienne Brulé Park" })] });
+    expect((await fetchFeed())[0].recurring).toBe(false);
   });
   it("treats a missing tags field as an empty list", async () => {
     const raw = rawEvent();

@@ -42,6 +42,14 @@ export function Star({ size, style, pop }: { size: number; style: React.CSSPrope
 export const dateLabel = (iso: string) =>
   new Date(`${iso}T12:00:00`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }).replace(",", "");
 
+/** One date reads "Thu Oct 15". Consecutive days read "Sat Nov 7 – Sun Nov 8". Anything else is a list. */
+export function datesLabel(dates: string[]): string {
+  if (dates.length === 1) return dateLabel(dates[0]);
+  const day = (iso: string) => new Date(`${iso}T12:00:00`).getTime();
+  const consecutive = dates.every((d, i) => i === 0 || day(d) - day(dates[i - 1]) === 86_400_000);
+  return consecutive ? `${dateLabel(dates[0])} – ${dateLabel(dates[dates.length - 1])}` : dates.map(dateLabel).join(", ");
+}
+
 export function StepBadge({ n, size }: { n: number; size: number }) {
   return (
     <span style={{ width: size, height: size, flex: "none", borderRadius: "50%", background: "#f5a93b", color: "#1a1200", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildCards, clampWindow, defaultWindow, filterByTags, tagOptions } from "@/lib/window";
+import { buildCards, cardKey, clampWindow, defaultWindow, filterByTags, tagOptions } from "@/lib/window";
 import type { DateWindow, EventCard, FeedEvent, ImageResult } from "@/lib/types";
 import { CardList, type ImageStates } from "./CardList";
 import { DateRangePicker, TagStep } from "./Filters";
@@ -44,7 +44,7 @@ export function EventsApp() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const windowCards = useMemo(() => (feed ? buildCards(feed, window) : []), [feed, window]);
-  windowCards.forEach((c) => knownCards.current.set(c.url, c));
+  windowCards.forEach((c) => knownCards.current.set(c.key, c));
   const options = useMemo(() => tagOptions(windowCards), [windowCards]);
   const tags = pickedTags.filter((t) => options.includes(t));
   const visible = useMemo(() => filterByTags(windowCards, tags), [windowCards, tags.join("\n")]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,16 +63,17 @@ export function EventsApp() {
     fetch("/api/events")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`status ${r.status}`))))
       .then((data: FeedEvent[]) => {
-        // Every starred event is known by url, so a pick outside the window can still be named and downloaded.
+        // Every starred event is known by card key, so a pick outside the window can still be named and downloaded.
         for (const e of [...data].sort((a, b) => b.date.localeCompare(a.date))) {
-          if (e.starred) knownCards.current.set(e.url, { id: e.id, title: e.title, url: e.url, date: e.date, tags: e.tags });
+          if (e.starred) knownCards.current.set(cardKey(e), { id: e.id, key: cardKey(e), title: e.title, url: e.url, date: e.date, dates: [e.date], tags: e.tags });
         }
         const restored = restorePicks(stored, data, buildCards(data, window), readCachedImage);
         setSelected(restored.selected);
         setPasted(restored.pasted);
         setImagesByUrl((prev) => {
           const next = { ...prev };
-          for (const url of restored.selected) {
+          for (const key of restored.selected) {
+            const url = knownCards.current.get(key)!.url;
             const image = restored.pasted[url] ?? readCachedImage(url);
             if (!next[url] && image) next[url] = { status: "resolved", imageUrl: image };
           }
@@ -85,7 +86,8 @@ export function EventsApp() {
 
   // Every starred event in the window gets a lookup, not only her picks (decision 14). Each url once.
   useEffect(() => {
-    const fresh = windowCards.filter((c) => !requested.current.has(c.url));
+    // Cards of a repeating event share a url, so one lookup serves them all.
+    const fresh = windowCards.filter((c, i) => !requested.current.has(c.url) && windowCards.findIndex((o) => o.url === c.url) === i);
     if (fresh.length === 0) return;
     fresh.forEach((c) => requested.current.add(c.url));
     setImagesByUrl((prev) => ({ ...Object.fromEntries(fresh.map((c) => [c.url, "loading" as const])), ...prev }));
@@ -100,7 +102,7 @@ export function EventsApp() {
   // A selected card that can no longer be downloaded is deselected.
   useEffect(() => {
     setSelected((prev) => {
-      const keep = [...prev].filter((url) => !isFailed(imagesByUrl[url]));
+      const keep = [...prev].filter((key) => !isFailed(imagesByUrl[knownCards.current.get(key)?.url ?? key]));
       return keep.length === prev.size ? prev : new Set(keep);
     });
   }, [imagesByUrl]);
@@ -168,9 +170,9 @@ export function EventsApp() {
   const changeWindow = (w: DateWindow) => setWindow(clampWindow(w, today));
 
   const wallItems: WallItem[] = [...selected]
-    .flatMap((url) => {
-      const card = knownCards.current.get(url);
-      const state = imagesByUrl[url];
+    .flatMap((key) => {
+      const card = knownCards.current.get(key);
+      const state = card && imagesByUrl[card.url];
       return card && state && state !== "loading" && state.status === "resolved" ? [{ card, imageUrl: state.imageUrl }] : [];
     })
     .sort((a, b) => a.card.date.localeCompare(b.card.date) || a.card.title.localeCompare(b.card.title));
@@ -196,7 +198,7 @@ export function EventsApp() {
             hiddenSelected={hiddenSelectedCount(selected, visible)}
             hideSelectedLine
             onPasteImage={pasteImage}
-            onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
+            onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.key))}
             actions={
               <button
                 type="button"
@@ -213,7 +215,7 @@ export function EventsApp() {
           items={wallItems}
           label={selectionLabel(selected.size, hiddenSelectedCount(selected, visible))}
           downloading={downloading}
-          onRemove={(card) => setSelected((prev) => toggleSelected(prev, card.url))}
+          onRemove={(card) => setSelected((prev) => toggleSelected(prev, card.key))}
           onDownload={download}
         />
       </div>

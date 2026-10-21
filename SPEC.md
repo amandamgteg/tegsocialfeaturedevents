@@ -33,7 +33,7 @@ It sits behind one shared password and is used in a desktop or laptop browser. *
 9. **Download.** One selected image downloads as that image. Two or more download as a ZIP. Files are named with the event date and title, such as `2026-10-07_tinker-tuesday.jpg`, and go to her normal Downloads folder.
 10. **Come back later.** Closing or refreshing the page keeps her selections and pasted images. A "Start over" button clears them. Events no longer in the feed drop out of her saved picks.
 
-Cards are sorted soonest first. Multi-day events appear once, sorted by their first date in the window. If there is nothing to show, the page shows a plain empty message.
+Cards are sorted soonest first. An event the feed marks as repeating (weekly, biweekly, monthly or annual) gets its own card for each date, and each can be selected on its own. Any other events sharing a link, such as the days of a festival, appear as one card listing every date in the window, sorted by the first of them. Consecutive days read as a range ("Sat Nov 7 – Sun Nov 8"), others as a list. If there is nothing to show, the page shows a plain empty message.
 
 ## 4. Decisions and why
 
@@ -45,7 +45,7 @@ Cards are sorted soonest first. Multi-day events appear once, sorted by their fi
 | 4 | Default window is today to +14 days, extendable to +30. | Two weeks is how far ahead she usually posts. The brief said 30 days. | client, brief |
 | 5 | "Today" is the real current date in her browser. An event is upcoming if its date is in the window. | The feed's own "today" is the day it was last rebuilt (2026-09-27, three days old on the day we checked). The feed's `past` marker is also unreliable (see section 8). | client, API |
 | 6 | Cards show date, title, tags and image. No description, time or venue. | Keeps v1 to what she needs to choose by picture. It also avoids the question of Misha's first-person wording with occasional profanity. | client |
-| 7 | One card per event link. | Multi-day events appear once per day in the feed. She should see and select each event once. | client |
+| 7 | A repeating event (feed `recurrence` is weekly, biweekly, monthly or annual) gets one card per date. Any other events sharing a link get one card listing all their dates in the window. | Each week of a series is a stand-alone event she may want to post. The days of a festival are one event she should see and select once. Changed 2026-10-21 after Hot Breath Karaoke dates were missing. | client |
 | 8 | Selection has no limits, only a visible count. | Her call. This replaced the brief's 3 to 5. | client, brief |
 | 9 | Selected events hidden by a filter stay selected and are still downloaded. The count says how many are hidden. | Lets her change filters without losing picks. | client, brief |
 | 10 | Selections and pasted images are remembered across refreshes, with a "Start over" button. | A refresh shouldn't lose her work. | client |
@@ -171,7 +171,7 @@ Feed fields were checked against the live feed on 2026-10-09. The adapter sends 
 
 | Extractor field | Feed field | How it is filled |
 |---|---|---|
-| `id` | `id` | The feed's `id`. Each feed event has its own `id`, and a multi-day event has one per day. The card uses the `id` of its first date in the window (the same date used to sort cards, section 3). |
+| `id` | `id` | The feed's `id`. Each feed event has its own `id`, and a multi-day event has one per day. The card uses the `id` of its first date in the window (the same date used to sort cards, section 3). A repeating event has one card, and so one `id`, per date. |
 | `title` | `title` | The feed's `title`. |
 | `eventUrl` | `url` | The feed's `url`. Every event has one. |
 | `eventUrlType` | no match | Always `"external"`. Every starred upcoming link in the feed goes to an outside website. `"internal"` would skip the page fetch (`extractor.ts:284-304`) and fail every event. |
@@ -210,8 +210,9 @@ Each module's purpose, public interface, what it hides, and who calls it. Decisi
 Shared types:
 
 ```ts
-type FeedEvent   = { id: string; title: string; url: string; date: string; tags: string[]; starred: boolean };
-type EventCard   = { id: string; title: string; url: string; date: string; tags: string[] }; // one per event link (decision 7)
+type FeedEvent   = { id: string; title: string; url: string; date: string; tags: string[]; starred: boolean; recurring: boolean };
+// date = first date shown, dates = every date shown. key = url, plus "#date" for a repeating event. Selection uses key. (decision 7)
+type EventCard   = { id: string; key: string; title: string; url: string; date: string; dates: string[]; tags: string[] };
 type ImageResult = { status: "resolved"; imageUrl: string } | { status: "failed"; reason: string };
 type DateWindow  = { start: string; end: string }; // YYYY-MM-DD
 ```

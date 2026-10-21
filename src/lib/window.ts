@@ -9,17 +9,23 @@ export function defaultWindow(today: Date): DateWindow {
   return { start: ymd(today), end: ymd(end) };
 }
 
-/** Starred events in the window, one card per url, soonest first (decisions 1, 5, 7). */
+/** The picking key for an event: its url, plus its date when it repeats (each date is its own event). */
+export const cardKey = (e: Pick<FeedEvent, "url" | "date" | "recurring">) => (e.recurring ? `${e.url}#${e.date}` : e.url);
+
+/**
+ * Starred events in the window, soonest first (decisions 1, 5, 7).
+ * A repeating event gets one card per date. Any other events sharing a link get one card listing all their dates.
+ */
 export function buildCards(feed: FeedEvent[], w: DateWindow): EventCard[] {
-  const firstByUrl = new Map<string, FeedEvent>();
-  for (const e of feed) {
+  const cards = new Map<string, EventCard>();
+  for (const e of [...feed].sort((a, b) => a.date.localeCompare(b.date))) {
     if (!e.starred || e.date < w.start || e.date > w.end) continue;
-    const seen = firstByUrl.get(e.url);
-    if (!seen || e.date < seen.date) firstByUrl.set(e.url, e);
+    const key = cardKey(e);
+    const seen = cards.get(key);
+    if (seen) seen.dates.push(e.date);
+    else cards.set(key, { id: e.id, key, title: e.title, url: e.url, date: e.date, dates: [e.date], tags: e.tags });
   }
-  return [...firstByUrl.values()]
-    .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title))
-    .map(({ id, title, url, date, tags }) => ({ id, title, url, date, tags }));
+  return [...cards.values()].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
 
 const MAX_DAYS_AHEAD = 30; // decision 4

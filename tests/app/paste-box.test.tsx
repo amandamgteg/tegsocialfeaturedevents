@@ -4,7 +4,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CardList } from "@/app/CardList";
 import type { EventCard } from "@/lib/types";
 
-const card = (i: number): EventCard => ({ id: `e${i}`, title: `Event ${i}`, url: `https://example.com/${i}`, date: "2026-10-20", tags: [] });
+const card = (i: number): EventCard => ({ id: `e${i}`, title: `Event ${i}`, key: `https://example.com/${i}`, url: `https://example.com/${i}`, date: "2026-10-20", dates: ["2026-10-20"], tags: [] });
 const bad = { status: "failed" as const, reason: "x" };
 const ok = { status: "resolved" as const, imageUrl: "https://img.example.com/a.jpg" };
 

@@ -4,7 +4,7 @@ import type { EventCard, ImageResult } from "@/lib/types";
 import { Lightbox } from "./Lightbox";
 import { PasteBox, type PasteResult } from "./PasteBox";
 import { selectionLabel } from "./selection";
-import { dateLabel, MONO, Star, StepBadge, TagIcon } from "./design";
+import { datesLabel, MONO, Star, StepBadge, TagIcon } from "./design";
 
 export type ImageState = "loading" | ImageResult;
 export type ImageStates = Record<string, ImageState>;
@@ -56,7 +56,7 @@ type Props = {
   images?: ImageStates;
   onRetry?: () => void;
   onImageError?: (cardId: string) => void;
-  selectedUrls?: ReadonlySet<string>;
+  selectedUrls?: ReadonlySet<string>; // card keys (see EventCard), despite the name
   hiddenSelected?: number;
   onToggleSelect?: (card: EventCard) => void;
   onPasteImage?: (card: EventCard, link: string) => Promise<PasteResult>;
@@ -137,7 +137,7 @@ export function CardList({ cards, images, onRetry, onImageError, selectedUrls, h
       {selectedLine}
       <ul style={{ listStyle: "none", padding: "12px 0 0", margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 18 }}>
         {cards.map((c) => {
-          const picked = selectedUrls?.has(c.url) ?? false;
+          const picked = selectedUrls?.has(c.key) ?? false;
           const canPick = !!onToggleSelect && selectable(images?.[c.id]) && !broken.has(c.id);
           return (
             <li
@@ -156,9 +156,9 @@ export function CardList({ cards, images, onRetry, onImageError, selectedUrls, h
                     onImageError?.(c.id);
                   }}
                 />
-                <span className="sr-only">{c.date}</span>
+                <span className="sr-only">{c.dates.join(", ")}</span>
                 <div aria-hidden="true" style={{ position: "absolute", left: 8, top: 8, fontFamily: MONO, fontSize: 12, fontWeight: 700, background: "#f5a93b", color: "#1a1200", padding: "4px 9px", borderRadius: 7 }}>
-                  {dateLabel(c.date).toUpperCase()}
+                  {datesLabel(c.dates).toUpperCase()}
                 </div>
                 {picked && canPick && <Star size={46} pop style={{ position: "absolute", right: -10, top: -16, filter: "drop-shadow(0 3px 0 #0007)" }} />}
               </div>

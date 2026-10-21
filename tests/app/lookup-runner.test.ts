@@ -3,7 +3,7 @@ import { runLookups } from "@/app/lookupRunner";
 import type { EventCard, ImageResult } from "@/lib/types";
 
 const cards = (n: number): EventCard[] =>
-  Array.from({ length: n }, (_, i) => ({ id: `e${i}`, title: `T${i}`, url: `https://example.com/${i}`, date: "2026-10-20", tags: [] }));
+  Array.from({ length: n }, (_, i) => ({ id: `e${i}`, title: `T${i}`, key: `https://example.com/${i}`, url: `https://example.com/${i}`, date: "2026-10-20", dates: ["2026-10-20"], tags: [] }));
 
 const ok = (id: string): ImageResult => ({ status: "resolved", imageUrl: `https://img.example.com/${id}.jpg` });
 

@@ -1,6 +1,7 @@
+import { cardKey } from "@/lib/window";
 import type { EventCard, FeedEvent } from "@/lib/types";
 
-// Amanda's picks, kept in her own browser, keyed by event URL (decision 10).
+// Amanda's picks, kept in her own browser, selections keyed by card key, pasted images by event URL (decision 10).
 // Kept apart from the cache of found images, so "Start over" can clear one without the other.
 export const PICKS_KEY = "teg:picks";
 
@@ -62,11 +63,15 @@ export function restorePicks(
   windowCards: EventCard[],
   readCachedImage: (eventUrl: string) => string | null,
 ): { selected: Set<string>; pasted: Record<string, string> } {
-  const inFeed = new Set(feed.filter((e) => e.starred).map((e) => e.url));
-  const inWindow = new Set(windowCards.map((c) => c.url));
-  const pasted = Object.fromEntries(Object.entries(stored.pasted).filter(([url]) => inFeed.has(url)));
+  const inFeed = new Set(feed.filter((e) => e.starred).map(cardKey));
+  const urlsInFeed = new Set(feed.filter((e) => e.starred).map((e) => e.url));
+  const inWindow = new Set(windowCards.map((c) => c.key));
+  const urlOfKey = (key: string) => key.split("#")[0];
+  const pasted = Object.fromEntries(Object.entries(stored.pasted).filter(([url]) => urlsInFeed.has(url)));
   const selected = new Set(
-    stored.selected.filter((url) => inFeed.has(url) && (inWindow.has(url) || url in pasted || readCachedImage(url) !== null)),
+    stored.selected.filter(
+      (key) => inFeed.has(key) && (inWindow.has(key) || urlOfKey(key) in pasted || readCachedImage(urlOfKey(key)) !== null),
+    ),
   );
   return { selected, pasted };
 }

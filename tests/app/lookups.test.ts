@@ -8,8 +8,8 @@ import type { ImageStates } from "@/app/CardList";
 const card = (i: number, over: Partial<EventCard> = {}): EventCard => ({
   id: `e${i}`,
   title: `T${i}`,
-  url: `https://events.example.com/${i}`,
-  date: "2026-10-20",
+  key: `https://events.example.com/${i}`, url: `https://events.example.com/${i}`,
+  date: "2026-10-20", dates: ["2026-10-20"],
   tags: [],
   ...over,
 });

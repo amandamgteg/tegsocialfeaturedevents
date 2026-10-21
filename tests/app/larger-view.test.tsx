@@ -5,7 +5,7 @@ import { CardList } from "@/app/CardList";
 import { EventsApp } from "@/app/EventsApp";
 import type { EventCard } from "@/lib/types";
 
-const card = (i: number): EventCard => ({ id: `e${i}`, title: `Event ${i}`, url: `https://example.com/${i}`, date: "2026-10-20", tags: [] });
+const card = (i: number): EventCard => ({ id: `e${i}`, title: `Event ${i}`, key: `https://example.com/${i}`, url: `https://example.com/${i}`, date: "2026-10-20", dates: ["2026-10-20"], tags: [] });
 const SRC = "https://img.example.com/pic one.jpg?a=1&b=2";
 const resolved = { status: "resolved" as const, imageUrl: SRC };
 const proxied = (u: string) => `/api/image?url=${encodeURIComponent(u)}`;

@@ -8,7 +8,7 @@ import { findImageForCard } from "@/lib/adapter";
 import type { EventCard } from "@/lib/types";
 
 const extract = vi.mocked(extractImagesAndHandles);
-const card: EventCard = { id: "tinker-2026-10-20", title: "Tinker Tuesday", url: "https://example.com/tinker", date: "2026-10-20", tags: ["making"] };
+const card: EventCard = { id: "tinker-2026-10-20", title: "Tinker Tuesday", key: "https://example.com/tinker", url: "https://example.com/tinker", date: "2026-10-20", dates: ["2026-10-20"], tags: ["making"] };
 
 beforeEach(() => {
   (lookup as unknown as ReturnType<typeof vi.fn>).mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);

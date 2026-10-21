@@ -11,9 +11,10 @@ const feedEv = (n: number, over: Partial<FeedEvent> = {}): FeedEvent => ({
   date: "2026-10-20",
   tags: [],
   starred: true,
+  recurring: false,
   ...over,
 });
-const winCard = (n: number): EventCard => ({ id: `id${n}`, title: `Event ${n}`, url: `https://e.com/${n}`, date: "2026-10-20", tags: [] });
+const winCard = (n: number): EventCard => ({ id: `id${n}`, title: `Event ${n}`, key: `https://e.com/${n}`, url: `https://e.com/${n}`, date: "2026-10-20", dates: ["2026-10-20"], tags: [] });
 const noCache = () => null;
 
 beforeEach(() => {
@@ -106,5 +107,16 @@ describe("restorePicks", () => {
     const feed = [feedEv(1, { id: "day1" }), feedEv(1, { id: "day2", date: "2026-10-25" })];
     const r = restorePicks(stored(["https://e.com/1"]), feed, [{ ...winCard(1), id: "day2" }], noCache);
     expect(r.selected.size).toBe(1);
+  });
+});
+
+describe("restorePicks with a repeating event", () => {
+  const weekly = (date: string) => feedEv(1, { id: `w-${date}`, date, recurring: true });
+  const key = (date: string) => `https://e.com/1#${date}`;
+  it("keeps a picked date that is still in the feed and drops one that is not", () => {
+    const feed = [weekly("2026-10-28")];
+    const win = [{ ...winCard(1), key: key("2026-10-28") }];
+    const { selected } = restorePicks({ selected: [key("2026-10-28"), key("2026-11-04")], pasted: {} }, feed, win, () => null);
+    expect([...selected]).toEqual([key("2026-10-28")]);
   });
 });

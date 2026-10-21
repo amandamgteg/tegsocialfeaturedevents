@@ -5,7 +5,7 @@ import { CardList, type ImageStates } from "@/app/CardList";
 import { TagFilter } from "@/app/Filters";
 import type { EventCard } from "@/lib/types";
 
-const card = (i: number): EventCard => ({ id: `e${i}`, title: `Event ${i}`, url: `https://e.com/${i}`, date: "2026-10-15", tags: ["Music"] });
+const card = (i: number): EventCard => ({ id: `e${i}`, title: `Event ${i}`, key: `https://e.com/${i}`, url: `https://e.com/${i}`, date: "2026-10-15", dates: ["2026-10-15"], tags: ["Music"] });
 const ok: ImageStates = { e1: { status: "resolved", imageUrl: "https://img.example.com/1.jpg" } };
 
 describe("Design I look", () => {

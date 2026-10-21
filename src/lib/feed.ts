@@ -2,6 +2,8 @@ import type { FeedEvent } from "./types";
 
 const FEED_URL = "https://toronto-event-generator.pages.dev/events.json";
 
+const REPEATING = new Set(["weekly", "biweekly", "monthly", "annual"]);
+
 const malformed = (why: string) => new Error(`TEG feed is malformed: ${why}`);
 
 export async function fetchFeed(): Promise<FeedEvent[]> {
@@ -27,6 +29,7 @@ export async function fetchFeed(): Promise<FeedEvent[]> {
       date: e.date as string,
       tags: Array.isArray(e.tags) ? (e.tags as string[]) : [],
       starred: e["misha-star"] === true,
+      recurring: typeof e.recurrence === "string" && REPEATING.has(e.recurrence),
     };
   });
 }

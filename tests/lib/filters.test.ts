@@ -3,7 +3,7 @@ import { clampWindow, tagOptions, filterByTags } from "@/lib/window";
 import type { EventCard } from "@/lib/types";
 
 const TODAY = new Date(2026, 9, 14); // max end is 2026-11-13 (+30)
-const card = (id: string, tags: string[]): EventCard => ({ id, title: id, url: `https://e.com/${id}`, date: "2026-10-20", tags });
+const card = (id: string, tags: string[]): EventCard => ({ id, title: id, key: `https://e.com/${id}`, url: `https://e.com/${id}`, date: "2026-10-20", dates: ["2026-10-20"], tags });
 
 describe("clampWindow", () => {
   it("returns a valid window unchanged", () => {
