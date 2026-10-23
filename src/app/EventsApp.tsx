@@ -120,7 +120,28 @@ export function EventsApp() {
     setPasted({});
     clearPicks();
     // A card that was fixed by a pasted image goes back to having no image. Found images stay cached.
-    setImagesByUrl((prev) => ({ ...prev, ...Object.fromEntries(pastedUrls.map((u) => [u, { status: "failed" as const, reason: "pasted image removed" }])) }));
+    // A card that had a found image gets it back; one that had none goes back to having no image.
+    setImagesByUrl((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        pastedUrls.map((u) => {
+          const original = readCachedImage(u);
+          return [u, original ? { status: "resolved" as const, imageUrl: original } : { status: "failed" as const, reason: "pasted image removed" }];
+        }),
+      ),
+    }));
+  };
+
+  // "Use the original image": drop the pasted one and bring back the image the tool found, looking it up again if it was not kept.
+  const restoreOriginal = (card: EventCard) => {
+    setPasted(({ [card.url]: _gone, ...rest }) => rest);
+    const original = readCachedImage(card.url);
+    if (original) {
+      setImagesByUrl((prev) => ({ ...prev, [card.url]: { status: "resolved", imageUrl: original } }));
+      return;
+    }
+    setImagesByUrl((prev) => ({ ...prev, [card.url]: "loading" }));
+    void lookupCards([card], findImage, recorder([card]));
   };
 
   const retry = () => {
@@ -200,6 +221,8 @@ export function EventsApp() {
             hiddenSelected={hiddenSelectedCount(selected, visible)}
             hideSelectedLine
             onPasteImage={pasteImage}
+            replacedUrls={new Set(Object.keys(pasted))}
+            onRestoreOriginal={restoreOriginal}
             onToggleSelect={(card) => setSelected((prev) => toggleSelected(prev, card.key))}
             actions={
               <button

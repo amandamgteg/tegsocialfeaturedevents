@@ -444,3 +444,23 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Try it on real events and tell me if anything looks off (spacing, text size, the order). Issue 12 starts when you say go.
+
+### 2026-10-23 · Fix: use a different image on any card
+**Status:** Done
+
+**What got done:**
+- Every card that has an image now has a "Use a different image" link. It opens the same paste box as before. Paste an image link, press "Use it", and the new picture replaces the old one.
+- If the link is not a real image, the tool says so and keeps the picture it had.
+- The new picture is used everywhere: on the card, on your photo wall, in the downloads and in the social slides. It is remembered when you refresh.
+- A card with a replaced picture also has "Use the original image", which brings back the one the tool found.
+- "Start over" now puts the found pictures back on replaced cards.
+- Updated SPEC.md (decision 15 and step 7), with your approval.
+- Tried it on the live site with your Mile End Kicks image link, and it worked.
+
+**What you can see or try:**
+- On the Mile End Kicks card, press "Use a different image", paste the Innis link, and press "Use it".
+
+**What is still waiting:**
+- Nothing.
+
+**Needs from Amanda:** Nothing

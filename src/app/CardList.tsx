@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { EventCard, ImageResult } from "@/lib/types";
 import { Lightbox } from "./Lightbox";
 import { PasteBox, type PasteResult } from "./PasteBox";
+import { ReplaceImage } from "./ReplaceImage";
 import { selectionLabel } from "./selection";
 import { datesLabel, MONO, Star, StepBadge, TagIcon } from "./design";
 
@@ -60,13 +61,16 @@ type Props = {
   hiddenSelected?: number;
   onToggleSelect?: (card: EventCard) => void;
   onPasteImage?: (card: EventCard, link: string) => Promise<PasteResult>;
+  /** Event urls whose image was replaced by a pasted one, so the card can offer the original back. */
+  replacedUrls?: ReadonlySet<string>;
+  onRestoreOriginal?: (card: EventCard) => void;
   /** Buttons shown beside the count, e.g. Start over. */
   actions?: React.ReactNode;
   /** The photo wall shows the running count, so the card list need not. */
   hideSelectedLine?: boolean;
 };
 
-export function CardList({ cards, images, onRetry, onImageError, selectedUrls, hiddenSelected = 0, onToggleSelect, onPasteImage, actions, hideSelectedLine }: Props) {
+export function CardList({ cards, images, onRetry, onImageError, selectedUrls, hiddenSelected = 0, onToggleSelect, onPasteImage, replacedUrls, onRestoreOriginal, actions, hideSelectedLine }: Props) {
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -162,6 +166,9 @@ export function CardList({ cards, images, onRetry, onImageError, selectedUrls, h
                 </div>
                 {picked && canPick && <Star size={46} pop style={{ position: "absolute", right: -10, top: -16, filter: "drop-shadow(0 3px 0 #0007)" }} />}
               </div>
+              {onPasteImage && selectable(images?.[c.id]) && !broken.has(c.id) && (
+                <ReplaceImage card={c} replaced={replacedUrls?.has(c.url) ?? false} onPasteImage={onPasteImage} onRestoreOriginal={onRestoreOriginal} />
+              )}
               <h2 style={{ fontSize: 17, lineHeight: 1.15, fontWeight: 600 }}>
                 <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textDecorationColor: "#4d8185", textUnderlineOffset: 3 }}>{c.title}</a>
               </h2>
