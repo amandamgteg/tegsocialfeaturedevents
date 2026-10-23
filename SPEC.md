@@ -32,6 +32,7 @@ It sits behind one shared password and is used in a desktop or laptop browser. *
 8. **Retry.** A "Retry failed images" button tries again for cards still missing an image.
 9. **Download.** One selected image downloads as that image. Two or more download as a ZIP. Files are named with the event date and title, such as `2026-10-07_tinker-tuesday.jpg`, and go to her normal Downloads folder.
 10. **Come back later.** Closing or refreshing the page keeps her selections and pasted images. A "Start over" button clears them. Events no longer in the feed drop out of her saved picks.
+11. **Make social images.** With events selected, a "Make social images" button opens an editor with an Instagram tab and a TikTok tab. Every slide is shown as a preview and can be clicked and edited (section 13). Three download buttons sit at the bottom: "Download event images" (the original images, as in step 9), "Download finished images" (a ZIP of the Instagram and TikTok slides), and "Download layers for Canva" (optional). Each button covers all selected events.
 
 Cards are sorted soonest first. An event the feed marks as repeating (weekly, biweekly, monthly or annual) gets its own card for each date, and each can be selected on its own. Any other events sharing a link, such as the days of a festival, appear as one card listing every date in the window, sorted by the first of them. Consecutive days read as a range ("Sat Nov 7 – Sun Nov 8"), others as a list. If there is nothing to show, the page shows a plain empty message.
 
@@ -66,6 +67,24 @@ Cards are sorted soonest first. An event the feed marks as repeating (weekly, bi
 | 25 | The extractor is copied from Task 1, not rewritten. The two separate image checks are consolidated into one shared check used by the finder, the proxy and the pasted-link checker. | Keeps the finder's behaviour the same as Task 1. The two existing checks follow different rules (`extractor.ts:236-258` against `imageFetch.ts:41-98`), so an image can pass one and fail the other. | client, code |
 | 26 | An adapter converts each feed event into the extractor's seven-field input and passes the results back in the shape the cards need. The fields and their sources are in section 10. | The feed's field names differ from what the extractor expects (`types.ts:1-9`). | client, code |
 | 27 | Module boundaries are as in section 12. The shared image check lives in the URL safety validator module. The ZIP is built in the browser from images fetched through the image proxy. The feed is fetched by our server, not the browser. | One image check is needed (decision 25) and a separate module would add nothing. A browser-built ZIP never passes through a Vercel response, which sidesteps the open size-limit question. Whether the feed allows browser requests (CORS) is untested, so server-side is the safe default. | client |
+| 28 | The tool makes finished social images in the browser: Instagram story slides and TikTok photo slides. Nothing is stored on a server. | Amanda currently builds these by hand in Canva every week. | client |
+| 29 | Instagram: one 1080×1920 slide per selected event. It has a top box, the event image, and a date-and-title box, in the wide layout (section 13). | Matches the slides she posts now. | client |
+| 30 | TikTok: 1080×1920 slides in a narrower centred column, kept clear of TikTok's right-hand icons and bottom description. The set is a cover slide followed by one slide per event. | A square test post and a 9:16 test post showed the icons cover the right edge. The design is separate from Instagram. | client |
+| 31 | Instagram and TikTok are separate designs and separate image sets. | Her call, after seeing that TikTok needs a narrower column. | client |
+| 32 | Event images keep their own shape (square, landscape or portrait). Instagram images are at most about 960 px wide. TikTok images are at most 800 px wide. A "Fill square" button on a TikTok event slide zooms the image into an 800×800 square. | Her call. Wide posters get small on TikTok, so she chooses to crop to one part. | client |
+| 33 | The date-and-title text reads "Mon D - Title" with a dash. Month names: Jan, Feb, March, Apr, May, June, July, Aug, Sept, Oct, Nov, Dec, in title case, with no "st" or "th". Consecutive days read "July 1-3". Other dates read "July 1, 4, 6". The tool fills the date in from the feed. She can edit it. | Her rules. | client |
+| 34 | Text is Arial in white on black. No other colours. The tool uses Arial installed on her computer (the Canva font is Arial MT Pro, which we cannot bundle). Font and colour are not editable. | Her rules. | client |
+| 35 | The background is the lab image she supplied, cropped the same way on every slide, with the column of ceiling lights centred. | Her rule. | client |
+| 36 | She can edit the wording of any text box, move the text boxes and the image, and zoom or crop the image. The top-box wording is edited per slide, not for all slides at once. Default top-box wording is "Upcoming events from our calendar...". | Her rules. | client |
+| 37 | Equal spacing: on Instagram, about 50 px between the top box and the image, and the same between the image and the date-and-title box. The tool keeps the two gaps equal when the image changes. | She does this by hand today. | client |
+| 38 | When a long title needs two or more lines, the date-and-title box grows downward and the text size stays the same. If the box passes the link-sticker line (about y 1590), the tool shows a warning. The image does not shrink on its own. | Her call. Text is never made smaller. | client |
+| 39 | The TikTok cover has the top box and a collage of every selected event, with no dates or titles. The collage uses each image's own shape and overlaps images a little. Images with writing go in front. She can bring any image forward or send it back before downloading. Her usual number is three, and the most is about six. | Her rules. The tool cannot reliably detect writing, so the order is manual. | client |
+| 40 | TikTok event slides go soonest first. Each slide is centred left to right and top to bottom within the usable area (between the top icons and the description text at the bottom). | Her rule. | client |
+| 41 | Her edits are saved in the browser and kept across refreshes. There is a "Reset to original" button for one slide and for everything. Saved edits for an event are dropped after its date has passed. Edits are saved on one computer and do not follow her to another. | She does not want to lose work. | client |
+| 42 | Three download buttons, each for all selected events: original event images (existing behaviour, decision 11), finished images as one ZIP, and layers for Canva. Finished-image files include "Instagram" or "TikTok" in their names. TikTok files are numbered, with the cover first. | Her rule. | client |
+| 43 | "Download layers for Canva" is separate from the main download and is optional. For each slide it gives the finished image plus each layer (background, each image, each text box) as its own transparent PNG. The text arrives as pictures, so it is not editable in Canva. | A first, simpler version. Live-text export is a later idea. | client |
+| 44 | Finished images are PNG files. | Sharpest text. | client |
+| 45 | The Instagram link sticker is added by Amanda inside Instagram. It is not part of the image. The tool only keeps space for it and warns if text goes into it. | How she posts today. | client |
 
 ## 5. Out of scope for v1
 
@@ -81,6 +100,7 @@ Cards are sorted soonest first. An event the feed marks as repeating (weekly, bi
 - Uploading the download to a cloud folder.
 - Distinguishing auto-starred events from hand-picked ones.
 - Anything that changes the TEG feed itself. The tool only reads it.
+- For the social images (section 13): a phone layout; changing fonts or colours; free-form moving of the fixed boxes beyond what section 3 and decision 36 list; automatic detection of writing in images; video.
 
 ## 6. How we'll know v1 is done
 
@@ -128,6 +148,11 @@ Things we discussed and deliberately left out, so they aren't lost.
 **Still to confirm or check**
 - Whether this session's environment can reach the event websites themselves is unknown. The feed address is allowed, but event sites haven't been tested. Real image-finding tests need that.
 - The live feed has two fields the brief doesn't mention (`overlay` and `cap`, which look like admin statistics). They are ignored for now.
+
+**Social images (section 13)**
+- Canva layers with live, editable text (for example by PDF).
+- Automatic ordering of collage images by whether they contain writing.
+- A single shared Instagram and TikTok design.
 
 ## 8. Live feed facts checked on 2026-09-30
 
@@ -306,6 +331,12 @@ type DateWindow  = { start: string; end: string }; // YYYY-MM-DD
 - **Failures (added in issue 8, signature unchanged):** `downloadSelected` still returns `Promise<void>`. If some images can't be fetched, it saves the ones that worked (one file or a ZIP, decided by how many worked) and then throws `PartialDownloadError` with the list of titles that failed, so the page can tell the user. The ZIP library is `fflate`, and the ZIP is named `teg-event-images.zip`.
 - **Called by:** the Download button.
 
+- **12.10 Date label.** `formatDateLabel(dates: string[]): string`. Purpose: turns an event's dates into "Oct 21", "July 1-3" or "July 1, 4, 6". Hides the month names and the range rules. Called by the slide layout.
+- **12.11 Slide layout.** `layoutInstagramSlide(input, edits?)`, `layoutTikTokEventSlide(input, edits?)`, `layoutTikTokCover(inputs, edits?)`. Purpose: pure functions that turn the event images' sizes, the text and any saved edits into box positions. Hides all the measurements in section 13, the equal-gap rule, the centring and the automatic collage arrangement. Called by the editor and by the slide drawing.
+- **12.12 Slide drawing.** `renderSlide(layout): Promise<Blob>` and `renderLayers(layout): Promise<Blob[]>`. Purpose: draws a layout to a PNG, or to one PNG per layer. Hides the canvas and the font fallbacks. Images come through the image proxy (12.7). Called by the editor and the downloads.
+- **12.13 Saved edits.** `loadEdits(key)`, `saveEdits(key, edits)`, `resetSlide(key)`, `resetAll()`, `pruneExpired(today)`. Purpose: keeps her edits in browser storage. Hides the storage format. Called by the editor.
+- **12.14 Social ZIP.** `downloadFinished(slides)` and `downloadLayers(slides)`. Purpose: builds the two ZIPs in the browser. Hides file naming and ZIP building (the existing ZIP library). Called by the editor's buttons.
+
 ### Dependencies
 
 ```
@@ -314,7 +345,24 @@ page -> /api/events -> 12.1 -> 12.2
 page -> /api/find-image -> 12.4 -> 12.5 -> 12.6
 card <img>, lightbox, 12.9 -> 12.7 -> 12.6
 paste box -> /api/check-image -> 12.8 -> 12.6
+editor -> 12.10, 12.11, 12.13
+editor -> 12.12 -> 12.7
+editor buttons -> 12.14 -> 12.12
 ```
 
 ### Not modules
 The page components, the selection store (decisions 9 and 10) and the browser image cache (decision 23) are UI state, not separate modules.
+
+## 13. Slide measurements (social images)
+
+All sizes are for a 1080×1920 slide. They were measured from Amanda's own examples and screenshots and are starting values, adjustable after real tests.
+
+| Item | Instagram | TikTok |
+|---|---|---|
+| Top box | x 76 to 1004, y 236 to 470, 76 px bold text, two lines | Cover only, same place |
+| Image | max about 960 wide, original shape, below the top box | max 800 wide, original shape |
+| Date-and-title box | x 61 to 1019, about 44 px bold text, grows down | x 140 to 940, about 44 px bold text, grows down |
+| Gaps | about 50 px above and below the image, kept equal | about 50 px between image and box |
+| Keep clear | link sticker area from about y 1590 down (warning line) | right side x 940 to 1080 from y 1000 to 1750, and the description area near the bottom |
+| Vertical placement | below the top box | stack centred in the band y 150 to 1600 (centre about y 875) |
+| Background | lab image, same crop, lights centred | same |

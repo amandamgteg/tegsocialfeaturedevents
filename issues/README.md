@@ -14,6 +14,13 @@ Vertical slices of `SPEC.md`. Each one goes through every layer it needs and end
 | 8 | Download selected images | 5 |
 | 9 | Remember picks across refreshes, and Start over | 5, 7 |
 | 10 | Live-feed walkthrough and test record | 1 to 9 |
+| 11 | Instagram slides, filled in automatically | 5, 8 |
+| 12 | Edit Instagram slides | 11 |
+| 13 | Remember edits and reset | 12 |
+| 14 | TikTok event slides | 12 |
+| 15 | TikTok cover collage | 14 |
+| 16 | Layers for Canva | 12, 15 |
+| 17 | Live walkthrough for social images | 11 to 16 |
 
 ```
 1 ──┬── 2 ──┬── 3

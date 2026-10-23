@@ -401,3 +401,23 @@ Copy this and fill it in:
 - No festival is starred in the feed right now, so the "one card, several dates" case is tested only with test data.
 
 **Needs from Amanda:** Nothing
+
+### 2026-10-23 · Plan: social media images (issues 11 to 17)
+**Status:** Planned. Nothing built yet.
+
+**What got done:**
+- Worked out, with you, how the tool will also make the finished Instagram and TikTok images, not just download the event pictures.
+- Added the plan to SPEC.md: what the feature does, your decisions (28 to 45), the slide measurements (section 13) and the new parts of the tool.
+- Added seven new issue files (11 to 17) and listed them in the issues table.
+- Nothing in the tool itself has changed.
+
+**What you can see or try:**
+- Nothing visible yet.
+
+**What is still waiting:**
+- Building issue 11 (the first Instagram slides). It starts only when you say go.
+- The measurements in section 13 are starting values. We adjust them in the live tests at the end (issue 17).
+
+**Needs from Amanda:**
+- A go-ahead to start issue 11.
+- Later, in issue 17: a private TikTok test post, an Instagram story test with the link sticker, and trying one layers download in Canva.
