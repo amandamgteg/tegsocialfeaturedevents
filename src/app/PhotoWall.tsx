@@ -8,7 +8,7 @@ const TILT = [-1.6, 1.2, -0.8, 1.6];
 const proxiedUrl = (imageUrl: string) => `/api/image?url=${encodeURIComponent(imageUrl)}`;
 
 /** "Your photo wall": every pick pinned as a picture, with the running count and the Download button (step 4). */
-export function PhotoWall({ items, label, downloading, onRemove, onDownload }: { items: WallItem[]; label: string; downloading: boolean; onRemove: (card: EventCard) => void; onDownload: () => void }) {
+export function PhotoWall({ items, label, downloading, onRemove, onDownload, onMakeSocial }: { items: WallItem[]; label: string; downloading: boolean; onRemove: (card: EventCard) => void; onDownload: () => void; onMakeSocial?: () => void }) {
   const n = items.length;
   const buttonText = downloading ? "Preparing download…" : n === 0 ? "Pick an event first" : n === 1 ? "Download image" : `Download ZIP (${n} images)`;
   return (
@@ -60,6 +60,16 @@ export function PhotoWall({ items, label, downloading, onRemove, onDownload }: {
       >
         {buttonText}
       </button>
+      {onMakeSocial && (
+        <button
+          type="button"
+          onClick={onMakeSocial}
+          disabled={n === 0}
+          style={{ minHeight: 48, borderRadius: 14, border: "1.5px solid #f5a93b", fontSize: 16, fontWeight: 800, background: "transparent", color: n ? "#f5a93b" : "#9fbfbe" }}
+        >
+          Make social images
+        </button>
+      )}
       <div style={{ fontSize: 12, color: "#9fbfbe", lineHeight: 1.4 }}>Files are named date_title.jpg and save to your Downloads folder.</div>
     </aside>
   );

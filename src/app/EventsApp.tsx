@@ -5,6 +5,7 @@ import type { DateWindow, EventCard, FeedEvent, ImageResult } from "@/lib/types"
 import { CardList, type ImageStates } from "./CardList";
 import { DateRangePicker, TagStep } from "./Filters";
 import { PhotoWall, type WallItem } from "./PhotoWall";
+import { SocialEditor } from "./SocialEditor";
 import type { PasteResult } from "./PasteBox";
 import { forgetCachedImage, readCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
@@ -42,6 +43,7 @@ export function EventsApp() {
   const knownCards = useRef(new Map<string, EventCard>()); // every card seen, so selections outside the window can still be downloaded
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [socialOpen, setSocialOpen] = useState(false);
 
   const windowCards = useMemo(() => (feed ? buildCards(feed, window) : []), [feed, window]);
   windowCards.forEach((c) => knownCards.current.set(c.key, c));
@@ -217,8 +219,10 @@ export function EventsApp() {
           downloading={downloading}
           onRemove={(card) => setSelected((prev) => toggleSelected(prev, card.key))}
           onDownload={download}
+          onMakeSocial={() => setSocialOpen(true)}
         />
       </div>
+      {socialOpen && <SocialEditor items={wallItems} onClose={() => setSocialOpen(false)} onDownloadOriginals={download} downloadingOriginals={downloading} />}
     </div>
   );
 }

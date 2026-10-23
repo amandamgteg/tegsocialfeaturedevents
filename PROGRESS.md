@@ -421,3 +421,26 @@ Copy this and fill it in:
 **Needs from Amanda:**
 - A go-ahead to start issue 11.
 - Later, in issue 17: a private TikTok test post, an Instagram story test with the link sticker, and trying one layers download in Canva.
+
+### 2026-10-23 · Issue 11: Instagram slides, filled in automatically
+**Status:** Done
+
+**What got done:**
+- Added a "Make social images" button under your photo wall. It opens a window with an Instagram tab.
+- The window shows one finished Instagram slide for each event you picked, soonest first: the lab background, the "Upcoming events from our calendar..." box, the event picture in its own shape, and a box with the date and title (for example "Oct 28 - Brains and Barstools...").
+- "Download finished images" saves all the slides in one ZIP, named with Instagram, the date and the title.
+- "Download event images" in the same window still saves the original pictures, exactly as before.
+- The dates follow your rules: "Oct 21", "July 1-3", "July 1, 4, 6", and "Sept" for September.
+- If a long title makes the box run into the space kept for the link sticker, the slide shows a warning.
+- Tested the whole thing in a real browser against the live events. The three slides and the ZIP came out right.
+
+**What you can see or try:**
+- Pick a few events, press "Make social images", and look at the slides. Then press "Download finished images" and open the ZIP.
+- Nothing can be edited yet. That is the next piece (issue 12).
+
+**What is still waiting:**
+- Editing the slides (issue 12), then remembered edits, TikTok, and the Canva layers.
+- The lab background lives in the project and sits behind the password like the rest of the site (I checked, and I had it slightly wrong earlier when I said it would be open).
+
+**Needs from Amanda:**
+- Try it on real events and tell me if anything looks off (spacing, text size, the order). Issue 12 starts when you say go.

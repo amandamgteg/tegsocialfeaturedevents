@@ -1,4 +1,5 @@
 import { zipSync } from "fflate";
+import { saveFile, slugFor, uniqueNames } from "./files";
 
 export type DownloadItem = { date: string; title: string; imageUrl: string };
 
@@ -28,19 +29,6 @@ const EXTENSIONS: Record<string, string> = {
   "image/bmp": "bmp",
   "image/tiff": "tiff",
 };
-const MAX_SLUG = 60;
-
-function slugFor(title: string): string {
-  const slug = title
-    .normalize("NFKD")
-    .replace(/\p{M}+/gu, "") // accents
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .slice(0, MAX_SLUG)
-    .replace(/^-+|-+$/g, "");
-  return slug || "event";
-}
-
 function extensionFor(contentType: string): string {
   const type = contentType.toLowerCase().split(";", 1)[0].trim();
   return EXTENSIONS[type] ?? "jpg";
@@ -59,31 +47,6 @@ async function fetchViaProxy(item: DownloadItem): Promise<Omit<Fetched, "name">>
   const contentType = res.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().startsWith("image/")) throw new Error("not an image");
   return { bytes: new Uint8Array(await res.arrayBuffer()), contentType };
-}
-
-/** Two events with the same date and title get -2, -3 and so on, so nothing overwrites anything. */
-function uniqueNames(files: { baseName: string }[]): string[] {
-  const used = new Set<string>();
-  return files.map(({ baseName }) => {
-    const dot = baseName.lastIndexOf(".");
-    const stem = baseName.slice(0, dot);
-    const ext = baseName.slice(dot);
-    let name = baseName;
-    for (let n = 2; used.has(name); n++) name = `${stem}-${n}${ext}`;
-    used.add(name);
-    return name;
-  });
-}
-
-function saveFile(name: string, blob: Blob) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 /**
