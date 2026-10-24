@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { PartialDownloadError } from "@/lib/download";
-import { renderSlide } from "@/lib/slideDraw";
-import { layoutInstagramSlide, type SlideLayout } from "@/lib/slideLayout";
+import { layoutInstagramSlide, type SlideEdits } from "@/lib/slideLayout";
 import { downloadFinished } from "@/lib/socialZip";
 import { canvasTextMeasurer, measureImage } from "./slideSupport";
 import type { WallItem } from "./PhotoWall";
+import { SlideEditPanel } from "./SlideEditPanel";
+import { SlidePreview } from "./SlidePreview";
 
-type Slide = { key: string; item: WallItem; layout?: SlideLayout; previewUrl?: string; error?: string };
+type Size = { width: number; height: number };
 
 const button = { minHeight: 44, borderRadius: 999, padding: "0 18px", fontSize: 15, fontWeight: 700 } as const;
 
@@ -23,7 +24,10 @@ export function SocialEditor({
   onDownloadOriginals: () => void;
   downloadingOriginals: boolean;
 }) {
-  const [slides, setSlides] = useState<Slide[]>(() => items.map((item) => ({ key: item.card.key, item })));
+  const [sizes, setSizes] = useState<Record<string, Size | "error">>({});
+  const [edits, setEdits] = useState<Record<string, SlideEdits>>({});
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [drawErrors, setDrawErrors] = useState<Record<string, true>>({});
   const [busy, setBusy] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const measureText = useMemo(() => canvasTextMeasurer(), []);
@@ -32,28 +36,33 @@ export function SocialEditor({
 
   useEffect(() => {
     let cancelled = false;
-    const urls: string[] = [];
-    setSlides(items.map((item) => ({ key: item.card.key, item })));
+    setSizes({});
+    setDrawErrors({});
     items.forEach(async (item) => {
-      const update = (patch: Partial<Slide>) => !cancelled && setSlides((prev) => prev.map((s) => (s.key === item.card.key ? { ...s, ...patch } : s)));
+      let size: Size | "error";
       try {
-        const imageSize = await measureImage(item.imageUrl);
-        const layout = layoutInstagramSlide({ imageUrl: item.imageUrl, imageSize, dates: item.card.dates, title: item.card.title, measureText });
-        const previewUrl = URL.createObjectURL(await renderSlide(layout));
-        urls.push(previewUrl);
-        if (cancelled) return URL.revokeObjectURL(previewUrl);
-        update({ layout, previewUrl });
+        size = await measureImage(item.imageUrl);
       } catch {
-        update({ error: `Couldn't prepare the slide for ${item.card.title}.` });
+        size = "error";
       }
+      if (!cancelled) setSizes((prev) => ({ ...prev, [item.card.key]: size }));
     });
     return () => {
       cancelled = true;
-      urls.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [signature]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const slides = items.map((item) => {
+    const key = item.card.key;
+    const size = sizes[key];
+    const layout =
+      size && size !== "error"
+        ? layoutInstagramSlide({ imageUrl: item.imageUrl, imageSize: size, dates: item.card.dates, title: item.card.title, measureText }, edits[key])
+        : undefined;
+    return { key, item, size: size && size !== "error" ? size : undefined, layout, error: size === "error" || drawErrors[key] };
+  });
   const ready = slides.flatMap((s) => (s.layout ? [{ platform: "Instagram" as const, date: s.item.card.date, title: s.item.card.title, layout: s.layout }] : []));
+  const editing = slides.find((s) => s.key === editingKey);
 
   const download = async () => {
     setDownloadError(null);
@@ -85,11 +94,12 @@ export function SocialEditor({
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", gap: 20 }}>
           {slides.map((s) => (
             <li key={s.key} style={{ width: 270 }}>
-              {s.previewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={s.previewUrl} alt={`Instagram slide: ${s.item.card.title}`} style={{ display: "block", width: "100%", aspectRatio: "9/16", borderRadius: 8 }} />
+              {s.layout && !s.error ? (
+                <button type="button" aria-label={`Edit slide: ${s.item.card.title}`} onClick={() => setEditingKey(s.key)} style={{ display: "block", width: "100%", padding: 0, border: 0, background: "transparent", cursor: "pointer" }}>
+                  <SlidePreview layout={s.layout} alt={`Instagram slide: ${s.item.card.title}`} onError={() => setDrawErrors((prev) => ({ ...prev, [s.key]: true }))} />
+                </button>
               ) : s.error ? (
-                <div data-slide-error style={{ aspectRatio: "9/16", border: "1.5px dashed #ffb4a0", borderRadius: 8, padding: 12, color: "#ffb4a0", fontSize: 14 }}>{s.error}</div>
+                <div data-slide-error style={{ aspectRatio: "9/16", border: "1.5px dashed #ffb4a0", borderRadius: 8, padding: 12, color: "#ffb4a0", fontSize: 14 }}>{`Couldn't prepare the slide for ${s.item.card.title}.`}</div>
               ) : (
                 <div style={{ aspectRatio: "9/16", border: "1.5px dashed #4d8185", borderRadius: 8, padding: 12, color: "#9fbfbe", fontSize: 14 }}>Preparing…</div>
               )}
@@ -110,6 +120,16 @@ export function SocialEditor({
           </button>
         </div>
       </div>
+      {editing?.layout && editing.size && (
+        <SlideEditPanel
+          item={editing.item}
+          layout={editing.layout}
+          imageSize={editing.size}
+          edits={edits[editing.key] ?? {}}
+          onChange={(next) => setEdits((prev) => ({ ...prev, [editing.key]: next }))}
+          onClose={() => setEditingKey(null)}
+        />
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ Click a slide to edit it. She can change the wording of the top box and the date
 ## Failing tests to write first
 - Changing the top-box text changes only that slide.
 - Changing the date-and-title text re-lays out the box (taller if more lines), with the same text size.
-- Moving or zooming the image keeps the two gaps equal.
+- Making the image bigger or smaller keeps the two gaps equal. Moving the date-and-title box re-centres the image between it and the top box, so the gaps stay equal. Zooming never moves or resizes the frame. Dragging the image itself puts it exactly where she drops it, and "Even out the gaps" brings equal gaps back.
 - Crop and zoom never leave empty space inside the image frame.
 - Dragging a text box moves it and is reflected in the layout.
 - The link-sticker warning appears when the box passes the line, and disappears when it does not.

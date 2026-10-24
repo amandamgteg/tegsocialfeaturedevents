@@ -464,3 +464,26 @@ Copy this and fill it in:
 - Nothing.
 
 **Needs from Amanda:** Nothing
+
+### 2026-10-24 · Issue 12: Edit Instagram slides
+**Status:** Done
+
+**What got done:**
+- Click any slide in the "Make social images" window to edit it. Each slide is edited on its own, so changing one never changes another.
+- You can change the wording of the top box and of the date-and-title box. The font and colours stay locked.
+- You can drag the top box, the picture and the date-and-title box. Boxes stay inside the slide.
+- The picture has an "Image size" slider, a "Zoom" slider, and a "Move the picture inside its frame" button for choosing which part shows. The picture always fills its frame, so there are no gaps inside it.
+- The two gaps around the picture stay equal when you change its size or move the date-and-title box. Dragging the picture by hand puts it exactly where you drop it, and "Even out the gaps" brings the equal gaps back. The window shows the gap sizes.
+- A long title makes the box grow downward with the same text size. A warning shows if it runs into the space kept for the link sticker, and goes away when you move it back.
+- "Download finished images" uses your edits.
+- Tried it in a real browser on live events: edited wording, zoom and a dragged box all came out in the downloaded image.
+- Updated SPEC.md (decision 37) and the issue 12 file to say how moving the picture by hand works.
+
+**What you can see or try:**
+- Pick a few events, press "Make social images", click a slide, and try the wording boxes, the sliders and dragging.
+
+**What is still waiting:**
+- Your edits are not remembered yet. If you refresh, they are gone. That is the next piece (issue 13), together with the Reset buttons.
+
+**Needs from Amanda:**
+- Try the editing on real events and tell me what feels wrong or awkward. Issue 13 starts when you say go.

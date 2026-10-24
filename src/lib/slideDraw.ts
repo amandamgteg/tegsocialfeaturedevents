@@ -39,7 +39,10 @@ export async function renderSlide(layout: SlideLayout): Promise<Blob> {
   const scale = layout.height / background.height;
   const keptWidth = layout.width / scale;
   ctx.drawImage(background, (background.width - keptWidth) / 2, 0, keptWidth, background.height, 0, 0, layout.width, layout.height);
-  ctx.drawImage(image, layout.image.x, layout.image.y, layout.image.w, layout.image.h);
+  const { x, y, w, h, source: s } = layout.image;
+  const wholePicture = s.x <= 0 && s.y <= 0 && s.w >= image.width && s.h >= image.height;
+  if (wholePicture) ctx.drawImage(image, x, y, w, h);
+  else ctx.drawImage(image, s.x, s.y, s.w, s.h, x, y, w, h); // only the part she zoomed in on
   drawTextBox(ctx, layout.topBox);
   drawTextBox(ctx, layout.caption);
   background.close?.();

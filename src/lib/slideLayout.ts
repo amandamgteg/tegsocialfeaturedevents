@@ -4,11 +4,28 @@ import { formatDateLabel } from "./dateLabel";
 export type MeasureText = (text: string, fontSizePx: number) => number;
 export type Box = { x: number; y: number; w: number; h: number };
 export type TextBox = Box & { lines: string[]; fontSize: number; lineHeight: number };
+export type Point = { x: number; y: number };
+/** Amanda's edits to one slide (decisions 36 to 38). Anything left out is worked out automatically. */
+export type SlideEdits = {
+  topText?: string;
+  captionText?: string;
+  /** Where she dragged a box to. Without it the box sits where the automatic layout puts it. */
+  topPos?: Point;
+  captionPos?: Point;
+  imagePos?: Point;
+  /** The picture frame's size compared with the automatic fit (1 is the automatic size). */
+  imageScale?: number;
+  /** How far the picture is zoomed in inside its frame, 1 to 4. */
+  zoom?: number;
+  /** The middle of the visible part of the picture, from 0 to 1 across and down. */
+  focus?: Point;
+};
 export type SlideLayout = {
   width: number;
   height: number;
   topBox: TextBox;
-  image: Box & { url: string };
+  /** `source` is the part of the picture shown, in the picture's own pixels. It always fills the frame. */
+  image: Box & { url: string; source: Box };
   caption: TextBox;
   /** True when the date-and-title box reaches into the space kept for the Instagram link sticker. */
   overLinkLine: boolean;
@@ -57,17 +74,47 @@ function textBox(box: { x: number; y: number; w: number }, spec: { fontSize: num
   return { ...box, h: lines.length * spec.lineHeight + spec.padding * 2, lines, fontSize: spec.fontSize, lineHeight: spec.lineHeight };
 }
 
-/** The Instagram story slide for one event (decisions 29, 32, 37, 38). */
-export function layoutInstagramSlide(input: InstagramSlideInput): SlideLayout {
-  const { imageSize, measureText } = input;
-  const topBox = textBox(TOP, TOP, input.topText ?? DEFAULT_TOP_TEXT, measureText);
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+const tidy = (v: number) => Math.round(v * 1000) / 1000;
+export const MIN_ZOOM = 1;
+export const MAX_ZOOM = 4;
+export const MIN_IMAGE_SCALE = 0.2;
+export const MAX_IMAGE_SCALE = 1.5;
 
-  // Keep the image's own shape, as big as fits.
-  const scale = Math.min(IMAGE_MAX.w / imageSize.width, IMAGE_MAX.h / imageSize.height);
+/** The part of the picture to show, always the same shape as the frame and never past the picture's edge. */
+function cropSource(size: { width: number; height: number }, zoom: number | undefined, focus: Point | undefined): Box {
+  const z = clamp(zoom ?? 1, MIN_ZOOM, MAX_ZOOM);
+  const w = size.width / z;
+  const h = size.height / z;
+  const x = clamp(clamp(focus?.x ?? 0.5, 0, 1) * size.width - w / 2, 0, size.width - w);
+  const y = clamp(clamp(focus?.y ?? 0.5, 0, 1) * size.height - h / 2, 0, size.height - h);
+  return { x: tidy(x), y: tidy(y), w: tidy(w), h: tidy(h) };
+}
+
+/**
+ * The Instagram story slide for one event (decisions 29, 32, 36 to 38).
+ * Without edits it is the automatic layout. With edits, a box she dragged stays where she put it. The rest follows:
+ * the image sits 50 px under the top box and the date-and-title box 50 px under the image, so the two gaps are equal.
+ * If she moved the date-and-title box, the image is centred between it and the top box, so the gaps stay equal.
+ */
+export function layoutInstagramSlide(input: InstagramSlideInput, edits: SlideEdits = {}): SlideLayout {
+  const { imageSize, measureText } = input;
+  const topBox = textBox({ x: edits.topPos?.x ?? TOP.x, y: edits.topPos?.y ?? TOP.y, w: TOP.w }, TOP, edits.topText ?? input.topText ?? DEFAULT_TOP_TEXT, measureText);
+  const topBottom = topBox.y + topBox.h;
+
+  // Keep the image's own shape, as big as fits, then apply her size change.
+  const fit = Math.min(IMAGE_MAX.w / imageSize.width, IMAGE_MAX.h / imageSize.height);
+  const scale = fit * clamp(edits.imageScale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
   const w = Math.round(imageSize.width * scale);
   const h = Math.round(imageSize.height * scale);
-  const image = { x: (SLIDE_WIDTH - w) / 2, y: topBox.y + topBox.h + GAP, w, h, url: input.imageUrl };
+  const y = edits.imagePos ? edits.imagePos.y : edits.captionPos ? topBottom + Math.max(0, (edits.captionPos.y - topBottom - h) / 2) : topBottom + GAP;
+  const image = { x: edits.imagePos?.x ?? (SLIDE_WIDTH - w) / 2, y, w, h, url: input.imageUrl, source: cropSource(imageSize, edits.zoom, edits.focus) };
 
-  const caption = textBox({ x: CAPTION.x, y: image.y + image.h + GAP, w: CAPTION.w }, CAPTION, `${formatDateLabel(input.dates)} - ${input.title}`, measureText);
+  const caption = textBox(
+    { x: edits.captionPos?.x ?? CAPTION.x, y: edits.captionPos?.y ?? image.y + image.h + GAP, w: CAPTION.w },
+    CAPTION,
+    edits.captionText ?? `${formatDateLabel(input.dates)} - ${input.title}`,
+    measureText,
+  );
   return { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, topBox, image, caption, overLinkLine: caption.y + caption.h > LINK_LINE_Y };
 }
