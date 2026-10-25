@@ -487,3 +487,28 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Try the editing on real events and tell me what feels wrong or awkward. Issue 13 starts when you say go.
+
+### 2026-10-25 · Issue 13: Remember edits and reset
+**Status:** Done
+
+**What got done:**
+- Your slide edits are now remembered in your browser as you make them. Refresh the page, open "Make social images" again, and your edits are still there.
+- Each slide's edits are kept separately, and each date of a repeating event keeps its own.
+- Each slide's edit window has a "Reset to original" button that puts that one slide back to the automatic version.
+- The "Make social images" window has a "Reset everything" button. It asks you to confirm first, then clears the edits on every slide.
+- Edits for an event are dropped automatically once the event's last day has passed.
+- The page's "Start over" button now also clears the saved slide edits.
+- If your browser blocks saving, the editor still works, it just can't remember.
+- Added one line to the shared test setup so saved data never leaks from one test to the next, with your approval.
+- Updated SPEC.md (decision 41 and the saved-edits module) to match.
+
+**What you can see or try:**
+- Edit a slide, refresh, and open the window again. Try "Reset to original" on one slide and "Reset everything".
+
+**What is still waiting:**
+- TikTok slides (issue 14 and 15) and the Canva layers (issue 16).
+- Edits live in one browser on one computer. They do not follow you to another computer.
+
+**Needs from Amanda:**
+- Try it and tell me if "Start over" clearing the slide edits is what you want. It is easy to change.
+- Say go for issue 14 when you are ready.

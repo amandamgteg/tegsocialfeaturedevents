@@ -11,6 +11,7 @@ import { forgetCachedImage, readCachedImage } from "./imageCache";
 import { lookupCards, retryFailed } from "./lookups";
 import { downloadSelected, PartialDownloadError } from "@/lib/download";
 import { clearPicks, loadPicks, restorePicks, savePicks } from "./picks";
+import { pruneExpired, resetAll as resetSlideEdits } from "@/lib/slideEdits";
 import { hiddenSelectedCount, selectedDownloadItems, selectionLabel, toggleSelected } from "./selection";
 
 async function findImage(card: EventCard): Promise<ImageResult> {
@@ -58,6 +59,9 @@ export function EventsApp() {
     const urlOf = new Map(cards.map((c) => [c.id, c.url]));
     return (id: string, result: ImageResult) => setImagesByUrl((prev) => ({ ...prev, [urlOf.get(id)!]: result }));
   };
+
+  // Slide edits for events that are over are dropped (decision 41).
+  useEffect(() => pruneExpired(today), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (fetched.current) return; // React dev mode runs effects twice
@@ -119,6 +123,7 @@ export function EventsApp() {
     setSelected(new Set());
     setPasted({});
     clearPicks();
+    resetSlideEdits(); // a fresh start means fresh slides too
     // A card that was fixed by a pasted image goes back to having no image. Found images stay cached.
     // A card that had a found image gets it back; one that had none goes back to having no image.
     setImagesByUrl((prev) => ({

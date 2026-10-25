@@ -18,6 +18,7 @@ export function SlideEditPanel({
   imageSize,
   edits,
   onChange,
+  onReset,
   onClose,
 }: {
   item: WallItem;
@@ -25,6 +26,7 @@ export function SlideEditPanel({
   imageSize: { width: number; height: number };
   edits: SlideEdits;
   onChange: (edits: SlideEdits) => void;
+  onReset: () => void;
   onClose: () => void;
 }) {
   const title = item.card.title;
@@ -132,9 +134,21 @@ export function SlideEditPanel({
               The title box runs into the space kept for the link sticker.
             </p>
           )}
-          <button type="button" onClick={onClose} style={{ ...button, border: 0, background: "#f5a93b", color: "#1a1200", alignSelf: "flex-start" }}>
-            Done
-          </button>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" onClick={onClose} style={{ ...button, border: 0, background: "#f5a93b", color: "#1a1200" }}>
+              Done
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCropMode(false);
+                onReset();
+              }}
+              style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}
+            >
+              Reset to original
+            </button>
+          </div>
         </div>
       </div>
     </div>

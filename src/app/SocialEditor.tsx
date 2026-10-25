@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PartialDownloadError } from "@/lib/download";
 import { layoutInstagramSlide, type SlideEdits } from "@/lib/slideLayout";
+import { loadEdits, resetAll, resetSlide, saveEdits } from "@/lib/slideEdits";
 import { downloadFinished } from "@/lib/socialZip";
 import { canvasTextMeasurer, measureImage } from "./slideSupport";
 import type { WallItem } from "./PhotoWall";
@@ -25,7 +26,8 @@ export function SocialEditor({
   downloadingOriginals: boolean;
 }) {
   const [sizes, setSizes] = useState<Record<string, Size | "error">>({});
-  const [edits, setEdits] = useState<Record<string, SlideEdits>>({});
+  const [edits, setEdits] = useState<Record<string, SlideEdits>>(() => Object.fromEntries(items.map((i) => [i.card.key, loadEdits(i.card.key)])));
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [drawErrors, setDrawErrors] = useState<Record<string, true>>({});
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,22 @@ export function SocialEditor({
   });
   const ready = slides.flatMap((s) => (s.layout ? [{ platform: "Instagram" as const, date: s.item.card.date, title: s.item.card.title, layout: s.layout }] : []));
   const editing = slides.find((s) => s.key === editingKey);
+
+  // Edits are remembered in this browser as they are made (decision 41). The event's last date lets them expire.
+  const lastDateOf = (item: WallItem) => [...item.card.dates].sort().at(-1) ?? item.card.date;
+  const changeEdits = (item: WallItem, next: SlideEdits) => {
+    setEdits((prev) => ({ ...prev, [item.card.key]: next }));
+    saveEdits(item.card.key, next, lastDateOf(item));
+  };
+  const resetOne = (item: WallItem) => {
+    resetSlide(item.card.key);
+    setEdits((prev) => ({ ...prev, [item.card.key]: {} }));
+  };
+  const resetEverything = () => {
+    resetAll();
+    setEdits({});
+    setConfirmingReset(false);
+  };
 
   const download = async () => {
     setDownloadError(null);
@@ -118,6 +136,21 @@ export function SocialEditor({
           <button type="button" onClick={onDownloadOriginals} disabled={downloadingOriginals} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
             Download event images
           </button>
+          {confirmingReset ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 14 }}>Reset all your edits on every slide? This can&apos;t be undone.</span>
+              <button type="button" onClick={resetEverything} style={{ ...button, border: 0, background: "#ffb4a0", color: "#2a0a00" }}>
+                Yes, reset everything
+              </button>
+              <button type="button" onClick={() => setConfirmingReset(false)} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
+                Keep my edits
+              </button>
+            </span>
+          ) : (
+            <button type="button" onClick={() => setConfirmingReset(true)} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
+              Reset everything
+            </button>
+          )}
         </div>
       </div>
       {editing?.layout && editing.size && (
@@ -126,7 +159,8 @@ export function SocialEditor({
           layout={editing.layout}
           imageSize={editing.size}
           edits={edits[editing.key] ?? {}}
-          onChange={(next) => setEdits((prev) => ({ ...prev, [editing.key]: next }))}
+          onChange={(next) => changeEdits(editing.item, next)}
+          onReset={() => resetOne(editing.item)}
           onClose={() => setEditingKey(null)}
         />
       )}
