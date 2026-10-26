@@ -645,3 +645,23 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Try the .pptx in Canva and tell me whether the words are editable and look right.
+
+### 2026-10-26 · Issue 17: Live walkthrough and test record (finished)
+**Status:** Done
+
+**What got done:**
+- All the checks for the social images are now done and recorded:
+  - My walkthrough on the live events (picks, edits, refresh, reset, downloads) passed.
+  - Your Instagram story check with the link sticker looked good. The "Hot Pizza" slide's title box ends where the link-sticker warning line already is, so that line stays.
+  - Your TikTok private test post looked good. It led to the plain black background on the TikTok event slides.
+  - Your Canva check worked, including editing the words in the .pptx file.
+- Problems found in testing were fixed: the white line at the bottom, the TikTok background, and the words not being editable in Canva.
+- The measurements in SPEC section 13 stay as they are, with no further changes needed.
+
+**What you can see or try:**
+- Everything is on the live site.
+
+**What is still waiting:**
+- Nothing. Issues 11 to 17 are all done.
+
+**Needs from Amanda:** Nothing
