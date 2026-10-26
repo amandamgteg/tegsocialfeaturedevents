@@ -1,4 +1,4 @@
-import { FONT_FAMILY, type SlideLayout, type TextBox } from "./slideLayout";
+import { FONT_FAMILY, type AnyLayout, type TextBox } from "./slideLayout";
 
 export const BACKGROUND_URL = "/social/lab-background.webp";
 
@@ -25,7 +25,7 @@ function drawTextBox(ctx: CanvasRenderingContext2D, box: TextBox) {
  * Draws a slide to a PNG, in the browser (decision 28). The background is the lab image, cropped to fill the
  * tall slide with its middle kept (decision 35). The event image comes through our image proxy (decision 16).
  */
-export async function renderSlide(layout: SlideLayout): Promise<Blob> {
+export async function renderSlide(layout: AnyLayout): Promise<Blob> {
   const [background, image] = await Promise.all([
     loadBitmap(BACKGROUND_URL, "background"),
     loadBitmap(`/api/image?url=${encodeURIComponent(layout.image.url)}`, "event image"),
@@ -43,7 +43,7 @@ export async function renderSlide(layout: SlideLayout): Promise<Blob> {
   const wholePicture = s.x <= 0 && s.y <= 0 && s.w >= image.width && s.h >= image.height;
   if (wholePicture) ctx.drawImage(image, x, y, w, h);
   else ctx.drawImage(image, s.x, s.y, s.w, s.h, x, y, w, h); // only the part she zoomed in on
-  drawTextBox(ctx, layout.topBox);
+  if ("topBox" in layout) drawTextBox(ctx, layout.topBox); // a TikTok event slide has none
   drawTextBox(ctx, layout.caption);
   background.close?.();
   image.close?.();

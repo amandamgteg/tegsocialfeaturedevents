@@ -2,20 +2,24 @@ import { zipSync } from "fflate";
 import { PartialDownloadError } from "./download";
 import { saveFile, slugFor, uniqueNames } from "./files";
 import { renderSlide } from "./slideDraw";
-import type { SlideLayout } from "./slideLayout";
+import type { AnyLayout } from "./slideLayout";
 
-export type SocialSlide = { platform: "Instagram" | "TikTok"; date: string; title: string; layout: SlideLayout };
+export type SocialSlide = { platform: "Instagram" | "TikTok"; date: string; title: string; layout: AnyLayout };
 
-/** "Instagram_2026-10-07_tinker-tuesday.png" (decision 42). */
-const fileNameFor = (s: SocialSlide) => `${s.platform}_${s.date}_${slugFor(s.title)}.png`;
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /**
- * Saves the finished slides as one ZIP, built in the browser, soonest first (decision 42). Slides that can't be
- * drawn are skipped, the rest are saved, and then a PartialDownloadError names the ones that failed.
+ * Saves the finished slides as one ZIP, built in the browser (decision 42): Instagram first, then TikTok, each soonest first.
+ * TikTok files are numbered from 02, because the cover will be 01. Slides that can't be drawn are skipped, the rest
+ * are saved, and then a PartialDownloadError names the ones that failed.
  */
 export async function downloadFinished(slides: SocialSlide[]): Promise<void> {
   if (slides.length === 0) return;
-  const ordered = [...slides].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  const rank = (s: SocialSlide) => (s.platform === "Instagram" ? 0 : 1);
+  const ordered = [...slides].sort((a, b) => rank(a) - rank(b) || a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+  const tiktok = ordered.filter((s) => s.platform === "TikTok");
+  const fileNameFor = (s: SocialSlide) =>
+    s.platform === "TikTok" ? `TikTok_${pad2(tiktok.indexOf(s) + 2)}_${s.date}_${slugFor(s.title)}.png` : `Instagram_${s.date}_${slugFor(s.title)}.png`;
   const results = await Promise.all(
     ordered.map(async (slide) => {
       try {

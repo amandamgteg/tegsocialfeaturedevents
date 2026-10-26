@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type SlideEdits, type SlideLayout } from "@/lib/slideLayout";
+import { MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type AnyLayout, type SlideEdits } from "@/lib/slideLayout";
 import type { WallItem } from "./PhotoWall";
 import { SlidePreview } from "./SlidePreview";
 
@@ -13,6 +13,7 @@ const field = { width: "100%", font: "inherit", fontSize: 14, padding: 8, border
 
 /** Editing one Instagram slide: wording, dragging the boxes and the picture, size, zoom and crop (decisions 36 to 38). */
 export function SlideEditPanel({
+  platform,
   item,
   layout,
   imageSize,
@@ -21,8 +22,9 @@ export function SlideEditPanel({
   onReset,
   onClose,
 }: {
+  platform: "Instagram" | "TikTok";
   item: WallItem;
-  layout: SlideLayout;
+  layout: AnyLayout;
   imageSize: { width: number; height: number };
   edits: SlideEdits;
   onChange: (edits: SlideEdits) => void;
@@ -33,8 +35,9 @@ export function SlideEditPanel({
   const stage = useRef<HTMLDivElement>(null);
   const [cropMode, setCropMode] = useState(false);
   const [dragging, setDragging] = useState<{ box: BoxName; dx: number; dy: number } | null>(null);
-  const { topBox, image, caption } = layout;
-  const boxes = { top: topBox, image, caption } as const;
+  const { image, caption } = layout;
+  const topBox = "topBox" in layout ? layout.topBox : null; // a TikTok event slide has no top box
+  const boxes = { top: topBox ?? caption, image, caption } as const;
 
   const commit = (box: BoxName, dx: number, dy: number) => {
     if (box === "image" && cropMode) {
@@ -87,8 +90,9 @@ export function SlideEditPanel({
     );
   };
 
-  const gapAbove = Math.round(image.y - (topBox.y + topBox.h));
+  const gapAbove = topBox ? Math.round(image.y - (topBox.y + topBox.h)) : 0;
   const gapBelow = Math.round(caption.y - (image.y + image.h));
+  const warning = "topBox" in layout ? (layout.overLinkLine ? "The title box runs into the space kept for the link sticker." : null) : layout.hiddenByTikTok ? "Part of this slide may be covered by TikTok's buttons or description." : null;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 30, background: "#000d", display: "flex", justifyContent: "center", overflow: "auto", padding: "24px 16px" }}>
@@ -96,15 +100,17 @@ export function SlideEditPanel({
         <div ref={stage} data-testid="slide-stage" style={{ position: "relative", width: STAGE_WIDTH, maxWidth: "100%", userSelect: "none" }}>
           <SlidePreview layout={layout} alt={`Preview: ${title}`} />
           {overlay("image", "Move the image")}
-          {overlay("top", "Move the top box")}
+          {topBox && overlay("top", "Move the top box")}
           {overlay("caption", "Move the date and title box")}
         </div>
         <div style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: 14 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>Edit slide: {title}</h2>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
-            Top box wording
-            <textarea rows={2} value={edits.topText ?? topBox.lines.join(" ")} onChange={(e) => onChange({ ...edits, topText: e.target.value })} style={field} />
-          </label>
+          {topBox && (
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
+              Top box wording
+              <textarea rows={2} value={edits.topText ?? topBox.lines.join(" ")} onChange={(e) => onChange({ ...edits, topText: e.target.value })} style={field} />
+            </label>
+          )}
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
             Date and title wording
             <textarea rows={2} value={edits.captionText ?? caption.lines.join(" ")} onChange={(e) => onChange({ ...edits, captionText: e.target.value })} style={field} />
@@ -121,17 +127,28 @@ export function SlideEditPanel({
             <button type="button" aria-pressed={cropMode} onClick={() => setCropMode((on) => !on)} style={{ ...button, border: "1.5px solid #6fa3a6", background: cropMode ? "#7fe0ea" : "transparent", color: cropMode ? "#04242a" : "#eaf4f2" }}>
               Move the picture inside its frame
             </button>
-            <button type="button" onClick={() => onChange({ ...edits, imagePos: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
-              Even out the gaps
-            </button>
+            {platform === "TikTok" ? (
+              <>
+                <button type="button" aria-pressed={!!edits.square} onClick={() => onChange({ ...edits, square: !edits.square, zoom: undefined, focus: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: edits.square ? "#7fe0ea" : "transparent", color: edits.square ? "#04242a" : "#eaf4f2" }}>
+                  Fill square
+                </button>
+                <button type="button" onClick={() => onChange({ ...edits, imagePos: undefined, captionPos: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
+                  Centre the slide
+                </button>
+              </>
+            ) : (
+              <button type="button" onClick={() => onChange({ ...edits, imagePos: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
+                Even out the gaps
+              </button>
+            )}
           </div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: "#b9d3d2" }}>
-            <span>Above the image: {gapAbove} px</span>
-            <span>Below the image: {gapBelow} px</span>
+            {topBox && <span>Above the image: {gapAbove} px</span>}
+            <span>{topBox ? "Below the image" : "Between the image and the box"}: {gapBelow} px</span>
           </div>
-          {layout.overLinkLine && (
+          {warning && (
             <p data-slide-warning style={{ margin: 0, color: "#ffd27a", fontSize: 13 }}>
-              The title box runs into the space kept for the link sticker.
+              {warning}
             </p>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

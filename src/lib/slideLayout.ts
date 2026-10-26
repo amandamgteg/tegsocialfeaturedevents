@@ -19,6 +19,8 @@ export type SlideEdits = {
   zoom?: number;
   /** The middle of the visible part of the picture, from 0 to 1 across and down. */
   focus?: Point;
+  /** TikTok only: "Fill square" shows the picture in an 800 by 800 square, cropped to fit. */
+  square?: boolean;
 };
 export type SlideLayout = {
   width: number;
@@ -30,6 +32,15 @@ export type SlideLayout = {
   /** True when the date-and-title box reaches into the space kept for the Instagram link sticker. */
   overLinkLine: boolean;
 };
+/** A TikTok event slide has no top box. `hiddenByTikTok` is true when part of it sits where TikTok's buttons or description would cover it. */
+export type TikTokEventLayout = {
+  width: number;
+  height: number;
+  image: SlideLayout["image"];
+  caption: TextBox;
+  hiddenByTikTok: boolean;
+};
+export type AnyLayout = SlideLayout | TikTokEventLayout;
 export type InstagramSlideInput = {
   imageUrl: string;
   imageSize: { width: number; height: number };
@@ -51,6 +62,12 @@ const CAPTION = { x: 61, w: 958, fontSize: 44, lineHeight: 57, padding: 13 };
 const TEXT_SIDE_PADDING = 60; // space kept free inside a box, split between left and right
 const GAP = 50;
 const IMAGE_MAX = { w: 960, h: 880 };
+// TikTok event slides (SPEC section 13): a narrow column, a band that avoids the top buttons and the description, and
+// the right-hand button area measured from Amanda's test post.
+const TIKTOK_COLUMN = { x: 140, w: 800 };
+const TIKTOK_IMAGE_MAX_H = 1100;
+const TIKTOK_BAND = { top: 150, bottom: 1600, centre: 875 };
+const TIKTOK_BUTTONS = { left: 940, top: 1000, bottom: 1750 };
 
 /** Splits text into lines that fit, breaking at spaces. A word wider than the box stays on its own line. */
 function wrap(text: string, maxWidth: number, fontSize: number, measureText: MeasureText): string[] {
@@ -81,11 +98,15 @@ export const MAX_ZOOM = 4;
 export const MIN_IMAGE_SCALE = 0.2;
 export const MAX_IMAGE_SCALE = 1.5;
 
-/** The part of the picture to show, always the same shape as the frame and never past the picture's edge. */
-function cropSource(size: { width: number; height: number }, zoom: number | undefined, focus: Point | undefined): Box {
+/**
+ * The part of the picture to show, always the same shape as the frame and never past the picture's edge.
+ * The frame is the picture's own shape unless `aspect` (width over height) says otherwise.
+ */
+function cropSource(size: { width: number; height: number }, zoom: number | undefined, focus: Point | undefined, aspect = size.width / size.height): Box {
   const z = clamp(zoom ?? 1, MIN_ZOOM, MAX_ZOOM);
-  const w = size.width / z;
-  const h = size.height / z;
+  const wide = aspect >= size.width / size.height;
+  const w = (wide ? size.width : size.height * aspect) / z;
+  const h = (wide ? size.width / aspect : size.height) / z;
   const x = clamp(clamp(focus?.x ?? 0.5, 0, 1) * size.width - w / 2, 0, size.width - w);
   const y = clamp(clamp(focus?.y ?? 0.5, 0, 1) * size.height - h / 2, 0, size.height - h);
   return { x: tidy(x), y: tidy(y), w: tidy(w), h: tidy(h) };
@@ -117,4 +138,32 @@ export function layoutInstagramSlide(input: InstagramSlideInput, edits: SlideEdi
     measureText,
   );
   return { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, topBox, image, caption, overLinkLine: caption.y + caption.h > LINK_LINE_Y };
+}
+
+/** True when part of a box would sit under TikTok's buttons, the top bar, or the description (decision 30). */
+function hiddenByTikTok(boxes: Box[]): boolean {
+  return boxes.some((b) => b.y < TIKTOK_BAND.top || b.y + b.h > TIKTOK_BAND.bottom || (b.x + b.w > TIKTOK_BUTTONS.left && b.y < TIKTOK_BUTTONS.bottom && b.y + b.h > TIKTOK_BUTTONS.top));
+}
+
+/**
+ * A TikTok photo slide for one event (decisions 30, 32, 38, 40): the picture and the date-and-title box in the narrow
+ * column, centred left to right and top to bottom in the usable area. With edits, a box she dragged stays where she put it.
+ */
+export function layoutTikTokEventSlide(input: InstagramSlideInput, edits: SlideEdits = {}): TikTokEventLayout {
+  const { imageSize, measureText } = input;
+  const aspect = edits.square ? 1 : imageSize.width / imageSize.height;
+
+  // The frame is the picture's own shape (or a square), as big as fits the column, then her size change.
+  const fit = edits.square ? 1 : Math.min(TIKTOK_COLUMN.w / imageSize.width, TIKTOK_IMAGE_MAX_H / imageSize.height);
+  const k = clamp(edits.imageScale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
+  const w = Math.round((edits.square ? TIKTOK_COLUMN.w : imageSize.width * fit) * k);
+  const h = Math.round((edits.square ? TIKTOK_COLUMN.w : imageSize.height * fit) * k);
+
+  const text = edits.captionText ?? `${formatDateLabel(input.dates)} - ${input.title}`;
+  const captionSize = textBox({ x: TIKTOK_COLUMN.x, y: 0, w: TIKTOK_COLUMN.w }, CAPTION, text, measureText);
+  const stackTop = Math.max(TIKTOK_BAND.top, TIKTOK_BAND.centre - (h + GAP + captionSize.h) / 2);
+  const imageY = edits.imagePos ? edits.imagePos.y : edits.captionPos ? edits.captionPos.y - GAP - h : stackTop;
+  const image = { x: edits.imagePos?.x ?? (SLIDE_WIDTH - w) / 2, y: imageY, w, h, url: input.imageUrl, source: cropSource(imageSize, edits.zoom, edits.focus, aspect) };
+  const caption = { ...captionSize, x: edits.captionPos?.x ?? TIKTOK_COLUMN.x, y: edits.captionPos?.y ?? image.y + image.h + GAP };
+  return { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, image, caption, hiddenByTikTok: hiddenByTikTok([image, caption]) };
 }

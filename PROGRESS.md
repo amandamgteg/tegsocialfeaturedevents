@@ -512,3 +512,27 @@ Copy this and fill it in:
 **Needs from Amanda:**
 - Try it and tell me if "Start over" clearing the slide edits is what you want. It is easy to change.
 - Say go for issue 14 when you are ready.
+
+### 2026-10-26 · Issue 14: TikTok event slides
+**Status:** Done
+
+**What got done:**
+- The "Make social images" window now has an Instagram tab and a TikTok tab.
+- The TikTok tab shows one slide per picked event, soonest first. Each has the picture in its own shape (at most 800 wide, never wider than the narrow column) and the date-and-title box below it, kept clear of TikTok's buttons on the right. There is no top box on these slides.
+- Each slide is centred left to right and top to bottom in the usable area. A very tall picture stops at 1100 high.
+- You can edit a TikTok slide the same way as an Instagram one: change the wording, drag the picture or the box, change the size, zoom, and choose which part of the picture shows. Your edits are remembered, and "Reset to original" works. TikTok edits and Instagram edits for the same event are kept separately.
+- "Fill square" puts the picture into an 800 by 800 square and crops it to fit, so you can zoom in on one spot. "Centre the slide" puts things back in the middle.
+- A warning shows if part of a slide would sit under TikTok's buttons or the description.
+- "Download finished images" now gives one ZIP with the Instagram slides first, then the TikTok ones. TikTok files are named like TikTok_02_2026-10-27_title.png, numbered from 02 because the cover will be 01.
+- Tried it in a real browser on live events. The TikTok slides, "Fill square" and the ZIP all came out right.
+- Changed one existing test, with your approval: it expected the download to hold only Instagram slides, and now expects the TikTok ones as well.
+
+**What you can see or try:**
+- Pick a few events, press "Make social images", open the TikTok tab, and try "Fill square" on a wide picture.
+
+**What is still waiting:**
+- The TikTok cover with the collage (issue 15), then the Canva layers (issue 16).
+- The measurements for TikTok are starting values. We check them on a real phone at the end (issue 17).
+
+**Needs from Amanda:**
+- Try the TikTok slides and tell me what looks off (size, spacing, position). Say go for issue 15 when you are ready.

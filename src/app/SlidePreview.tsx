@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { renderSlide } from "@/lib/slideDraw";
-import type { SlideLayout } from "@/lib/slideLayout";
+import type { AnyLayout } from "@/lib/slideLayout";
 
 /** A slide drawn from its layout. The old picture stays until the new one is ready, so edits don't flicker. */
-export function SlidePreview({ layout, alt, onError }: { layout: SlideLayout; alt: string; onError?: () => void }) {
+export function SlidePreview({ layout, alt, onError }: { layout: AnyLayout; alt: string; onError?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   const current = useRef<string | null>(null);
   const signature = JSON.stringify(layout);

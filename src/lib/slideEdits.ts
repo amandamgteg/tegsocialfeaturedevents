@@ -25,6 +25,7 @@ function clean(raw: unknown): SlideEdits {
   }
   if (isNumber(r.imageScale)) edits.imageScale = r.imageScale;
   if (isNumber(r.zoom)) edits.zoom = r.zoom;
+  if (r.square === true) edits.square = true;
   return edits;
 }
 
