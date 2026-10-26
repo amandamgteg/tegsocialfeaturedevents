@@ -25,7 +25,7 @@ const props = { items, onClose: vi.fn(), onDownloadOriginals: vi.fn(), downloadi
 const KEY_A = "https://events.example.com/a";
 const TIKTOK_KEY_A = `tiktok|${KEY_A}`;
 
-const tiktokLayouts = (url: string): AnyLayout[] => mocks.renderSlide.mock.calls.map((c) => c[0]).filter((l: AnyLayout) => l.image.url === url && !("topBox" in l));
+const tiktokLayouts = (url: string): AnyLayout[] => mocks.renderSlide.mock.calls.map((c) => c[0]).filter((l: AnyLayout) => l.image?.url === url && !("topBox" in l));
 const latest = (url: string) => tiktokLayouts(url).at(-1)!;
 
 async function openTikTokTab() {
@@ -69,7 +69,7 @@ describe("TikTok tab", () => {
     await openTikTokTab();
     expect(screen.getByRole("tab", { name: "TikTok" })).toHaveAttribute("aria-selected", "true");
     const alts = (await screen.findAllByRole("img")).map((i) => i.getAttribute("alt"));
-    expect(alts).toEqual(["TikTok slide: Event a", "TikTok slide: Event b"]);
+    expect(alts).toEqual(["TikTok cover slide", "TikTok slide: Event a", "TikTok slide: Event b"]);
   });
 
   it("draws each TikTok slide with the date and title and no top box", async () => {
@@ -193,7 +193,7 @@ describe("TikTok tab", () => {
       fireEvent.click(screen.getByRole("button", { name: "Download finished images" }));
       await waitFor(() => expect(mocks.downloadFinished).toHaveBeenCalled());
       const slides = mocks.downloadFinished.mock.calls[0][0] as { platform: string; title: string }[];
-      expect(slides.map((s) => `${s.platform}:${s.title}`).sort()).toEqual(["Instagram:Event a", "Instagram:Event b", "TikTok:Event a", "TikTok:Event b"]);
+      expect(slides.map((s) => `${s.platform}:${s.title}`).sort()).toEqual(["Instagram:Event a", "Instagram:Event b", "TikTok:Cover", "TikTok:Event a", "TikTok:Event b"]);
     });
   });
 });

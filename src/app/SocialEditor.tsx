@@ -1,13 +1,15 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { PartialDownloadError } from "@/lib/download";
-import { layoutInstagramSlide, layoutTikTokEventSlide, type AnyLayout, type SlideEdits } from "@/lib/slideLayout";
+import { layoutInstagramSlide, layoutTikTokCover, layoutTikTokEventSlide, type AnyLayout, type DrawableLayout, type SlideEdits, type TikTokCoverLayout } from "@/lib/slideLayout";
 import { loadEdits, resetAll, resetSlide, saveEdits } from "@/lib/slideEdits";
 import { downloadFinished } from "@/lib/socialZip";
 import { canvasTextMeasurer, measureImage } from "./slideSupport";
 import type { WallItem } from "./PhotoWall";
+import { CoverEditPanel } from "./CoverEditPanel";
 import { SlideEditPanel } from "./SlideEditPanel";
 import { SlidePreview } from "./SlidePreview";
+import { slideWarning } from "./slideWarning";
 
 type Size = { width: number; height: number };
 type Platform = "Instagram" | "TikTok";
@@ -15,6 +17,9 @@ const PLATFORMS: Platform[] = ["Instagram", "TikTok"];
 /** Where a slide's edits are kept. Instagram keeps the plain card key. TikTok edits are stored apart from them. */
 const editKey = (platform: Platform, item: WallItem) => (platform === "TikTok" ? `tiktok|${item.card.key}` : item.card.key);
 const slideId = (platform: Platform, item: WallItem) => `${platform}|${item.card.key}`;
+/** The TikTok cover is one slide for all the picked events, so it has its own place to keep edits and its own id. */
+const COVER_KEY = "tiktok|cover";
+const COVER_ID = "TikTok|cover";
 
 const button = { minHeight: 44, borderRadius: 999, padding: "0 18px", fontSize: 15, fontWeight: 700 } as const;
 
@@ -31,7 +36,7 @@ export function SocialEditor({
   downloadingOriginals: boolean;
 }) {
   const [sizes, setSizes] = useState<Record<string, Size | "error">>({});
-  const [edits, setEdits] = useState<Record<string, SlideEdits>>(() => Object.fromEntries(items.flatMap((i) => PLATFORMS.map((p) => [editKey(p, i), loadEdits(editKey(p, i))]))));
+  const [edits, setEdits] = useState<Record<string, SlideEdits>>(() => ({ [COVER_KEY]: loadEdits(COVER_KEY), ...Object.fromEntries(items.flatMap((i) => PLATFORMS.map((p) => [editKey(p, i), loadEdits(editKey(p, i))]))) }));
   const [platform, setPlatform] = useState<Platform>("Instagram");
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -73,18 +78,39 @@ export function SocialEditor({
       return { id: slideId(plat, item), platform: plat, item, size: size && size !== "error" ? size : undefined, layout, error: size === "error" || drawErrors[slideId(plat, item)] };
     }),
   );
-  // Instagram slides first, then TikTok: the order of the finished-images ZIP.
-  const ready = PLATFORMS.flatMap((plat) => slides.filter((s) => s.platform === plat).flatMap((s) => (s.layout ? [{ platform: s.platform, date: s.item.card.date, title: s.item.card.title, layout: s.layout }] : [])));
+  // The TikTok cover collages every picked event. It waits until every picture has been measured.
+  const lastDate = items.flatMap((i) => i.card.dates).sort().at(-1) ?? "";
+  const firstDate = items.map((i) => i.card.date).sort()[0] ?? "";
+  const coverItems = items.flatMap((item) => (sizes[item.card.key] && sizes[item.card.key] !== "error" ? [{ item, size: sizes[item.card.key] as Size }] : []));
+  const allMeasured = items.every((i) => sizes[i.card.key]);
+  const coverLayout: TikTokCoverLayout | undefined =
+    allMeasured && coverItems.length > 0
+      ? layoutTikTokCover({ items: coverItems.map(({ item, size }) => ({ key: item.card.key, imageUrl: item.imageUrl, imageSize: size })), measureText }, edits[COVER_KEY])
+      : undefined;
+  const cover = { id: COVER_ID, layout: coverLayout, error: (allMeasured && coverItems.length === 0) || drawErrors[COVER_ID] };
+
+  // Instagram slides first, then the TikTok cover and event slides: the order of the finished-images ZIP.
+  const ready = [
+    ...slides.filter((s) => s.platform === "Instagram").flatMap((s) => (s.layout ? [{ platform: s.platform, date: s.item.card.date, title: s.item.card.title, layout: s.layout }] : [])),
+    ...(coverLayout ? [{ platform: "TikTok" as const, date: firstDate, title: "Cover", layout: coverLayout as DrawableLayout, isCover: true }] : []),
+    ...slides.filter((s) => s.platform === "TikTok").flatMap((s) => (s.layout ? [{ platform: s.platform, date: s.item.card.date, title: s.item.card.title, layout: s.layout }] : [])),
+  ];
   const shown = slides.filter((s) => s.platform === platform);
   const editing = slides.find((s) => s.id === editingKey);
-  const warning = (layout: AnyLayout | undefined) =>
-    !layout ? null : "topBox" in layout ? (layout.overLinkLine ? "The title box runs into the space kept for the link sticker." : null) : layout.hiddenByTikTok ? "Part of this slide may be covered by TikTok's buttons or description." : null;
 
   // Edits are remembered in this browser as they are made (decision 41). The event's last date lets them expire.
   const lastDateOf = (item: WallItem) => [...item.card.dates].sort().at(-1) ?? item.card.date;
   const changeEdits = (plat: Platform, item: WallItem, next: SlideEdits) => {
     setEdits((prev) => ({ ...prev, [editKey(plat, item)]: next }));
     saveEdits(editKey(plat, item), next, lastDateOf(item));
+  };
+  const changeCover = (next: SlideEdits) => {
+    setEdits((prev) => ({ ...prev, [COVER_KEY]: next }));
+    saveEdits(COVER_KEY, next, lastDate);
+  };
+  const resetCover = () => {
+    resetSlide(COVER_KEY);
+    setEdits((prev) => ({ ...prev, [COVER_KEY]: {} }));
   };
   const resetOne = (plat: Platform, item: WallItem) => {
     resetSlide(editKey(plat, item));
@@ -126,6 +152,24 @@ export function SocialEditor({
         </div>
         {downloadError && <p role="alert" style={{ color: "#ffb4a0" }}>{downloadError}</p>}
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexWrap: "wrap", gap: 20 }}>
+          {platform === "TikTok" && (
+            <li key={cover.id} style={{ width: 270 }}>
+              {cover.layout && !cover.error ? (
+                <button type="button" aria-label="Edit slide: Cover" onClick={() => setEditingKey(cover.id)} style={{ display: "block", width: "100%", padding: 0, border: 0, background: "transparent", cursor: "pointer" }}>
+                  <SlidePreview layout={cover.layout} alt="TikTok cover slide" onError={() => setDrawErrors((prev) => ({ ...prev, [cover.id]: true }))} />
+                </button>
+              ) : cover.error ? (
+                <div data-slide-error style={{ aspectRatio: "9/16", border: "1.5px dashed #ffb4a0", borderRadius: 8, padding: 12, color: "#ffb4a0", fontSize: 14 }}>Couldn&apos;t prepare the cover slide.</div>
+              ) : (
+                <div style={{ aspectRatio: "9/16", border: "1.5px dashed #4d8185", borderRadius: 8, padding: 12, color: "#9fbfbe", fontSize: 14 }}>Preparing…</div>
+              )}
+              {slideWarning(cover.layout) && (
+                <p data-slide-warning style={{ margin: "8px 0 0", color: "#ffd27a", fontSize: 13 }}>
+                  {slideWarning(cover.layout)}
+                </p>
+              )}
+            </li>
+          )}
           {shown.map((s) => (
             <li key={s.id} style={{ width: 270 }}>
               {s.layout && !s.error ? (
@@ -137,9 +181,9 @@ export function SocialEditor({
               ) : (
                 <div style={{ aspectRatio: "9/16", border: "1.5px dashed #4d8185", borderRadius: 8, padding: 12, color: "#9fbfbe", fontSize: 14 }}>Preparing…</div>
               )}
-              {warning(s.layout) && (
+              {slideWarning(s.layout) && (
                 <p data-slide-warning style={{ margin: "8px 0 0", color: "#ffd27a", fontSize: 13 }}>
-                  {warning(s.layout)}
+                  {slideWarning(s.layout)}
                 </p>
               )}
             </li>
@@ -169,7 +213,18 @@ export function SocialEditor({
           )}
         </div>
       </div>
-      {editing?.layout && editing.size && (
+      {editingKey === COVER_ID && coverLayout && (
+        <CoverEditPanel
+          items={coverItems.map((c) => c.item)}
+          sizes={Object.fromEntries(coverItems.map((c) => [c.item.card.key, c.size]))}
+          layout={coverLayout}
+          edits={edits[COVER_KEY] ?? {}}
+          onChange={changeCover}
+          onReset={resetCover}
+          onClose={() => setEditingKey(null)}
+        />
+      )}
+      {editing?.layout && editing.size && !("images" in editing.layout) && (
         <SlideEditPanel
           platform={editing.platform}
           item={editing.item}

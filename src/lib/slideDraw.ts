@@ -1,4 +1,4 @@
-import { FONT_FAMILY, type AnyLayout, type TextBox } from "./slideLayout";
+import { FONT_FAMILY, type DrawableLayout, type TextBox } from "./slideLayout";
 
 export const BACKGROUND_URL = "/social/lab-background.webp";
 
@@ -25,10 +25,12 @@ function drawTextBox(ctx: CanvasRenderingContext2D, box: TextBox) {
  * Draws a slide to a PNG, in the browser (decision 28). The background is the lab image, cropped to fill the
  * tall slide with its middle kept (decision 35). The event image comes through our image proxy (decision 16).
  */
-export async function renderSlide(layout: AnyLayout): Promise<Blob> {
-  const [background, image] = await Promise.all([
+export async function renderSlide(layout: DrawableLayout): Promise<Blob> {
+  // A cover has many pictures, drawn back to front. Every other slide has one.
+  const pictures = "images" in layout ? layout.images : [layout.image];
+  const [background, ...bitmaps] = await Promise.all([
     loadBitmap(BACKGROUND_URL, "background"),
-    loadBitmap(`/api/image?url=${encodeURIComponent(layout.image.url)}`, "event image"),
+    ...pictures.map((p) => loadBitmap(`/api/image?url=${encodeURIComponent(p.url)}`, "event image")),
   ]);
   const canvas = document.createElement("canvas");
   canvas.width = layout.width;
@@ -39,14 +41,17 @@ export async function renderSlide(layout: AnyLayout): Promise<Blob> {
   const scale = layout.height / background.height;
   const keptWidth = layout.width / scale;
   ctx.drawImage(background, (background.width - keptWidth) / 2, 0, keptWidth, background.height, 0, 0, layout.width, layout.height);
-  const { x, y, w, h, source: s } = layout.image;
-  const wholePicture = s.x <= 0 && s.y <= 0 && s.w >= image.width && s.h >= image.height;
-  if (wholePicture) ctx.drawImage(image, x, y, w, h);
-  else ctx.drawImage(image, s.x, s.y, s.w, s.h, x, y, w, h); // only the part she zoomed in on
+  pictures.forEach((p, i) => {
+    const bitmap = bitmaps[i];
+    const s = p.source;
+    const wholePicture = s.x <= 0 && s.y <= 0 && s.w >= bitmap.width && s.h >= bitmap.height;
+    if (wholePicture) ctx.drawImage(bitmap, p.x, p.y, p.w, p.h);
+    else ctx.drawImage(bitmap, s.x, s.y, s.w, s.h, p.x, p.y, p.w, p.h); // only the part she zoomed in on
+  });
   if ("topBox" in layout) drawTextBox(ctx, layout.topBox); // a TikTok event slide has none
-  drawTextBox(ctx, layout.caption);
+  if ("caption" in layout) drawTextBox(ctx, layout.caption); // the TikTok cover has none
   background.close?.();
-  image.close?.();
+  bitmaps.forEach((b) => b.close?.());
 
   return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Couldn't save the slide"))), "image/png"));
 }

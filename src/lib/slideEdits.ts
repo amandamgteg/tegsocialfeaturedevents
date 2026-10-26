@@ -1,4 +1,4 @@
-import type { Point, SlideEdits } from "./slideLayout";
+import type { ImageEdit, Point, SlideEdits } from "./slideLayout";
 
 // Amanda's slide edits, kept in her own browser (decision 41). One entry per card key, each with the last date of
 // its event so the entry can be dropped once the event is over. Every call tolerates storage being missing or blocked.
@@ -13,6 +13,18 @@ const point = (v: unknown): Point | undefined => {
   return p && typeof p === "object" && isNumber(p.x) && isNumber(p.y) ? { x: p.x, y: p.y } : undefined;
 };
 
+function cleanImageEdit(raw: unknown): ImageEdit {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const edit: ImageEdit = {};
+  const pos = point(r.pos);
+  const focus = point(r.focus);
+  if (pos) edit.pos = pos;
+  if (focus) edit.focus = focus;
+  if (isNumber(r.scale)) edit.scale = r.scale;
+  if (isNumber(r.zoom)) edit.zoom = r.zoom;
+  return edit;
+}
+
 /** Keeps only the fields that are the right kind of value, so damaged data can never break the editor. */
 function clean(raw: unknown): SlideEdits {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -26,6 +38,18 @@ function clean(raw: unknown): SlideEdits {
   if (isNumber(r.imageScale)) edits.imageScale = r.imageScale;
   if (isNumber(r.zoom)) edits.zoom = r.zoom;
   if (r.square === true) edits.square = true;
+  if (Array.isArray(r.order)) {
+    const order = r.order.filter(isText);
+    if (order.length > 0) edits.order = order;
+  }
+  if (r.collage && typeof r.collage === "object" && !Array.isArray(r.collage)) {
+    const collage: Record<string, ImageEdit> = {};
+    for (const [key, raw] of Object.entries(r.collage)) {
+      const edit = cleanImageEdit(raw);
+      if (Object.keys(edit).length > 0) collage[key] = edit;
+    }
+    if (Object.keys(collage).length > 0) edits.collage = collage;
+  }
   return edits;
 }
 

@@ -21,7 +21,12 @@ export type SlideEdits = {
   focus?: Point;
   /** TikTok only: "Fill square" shows the picture in an 800 by 800 square, cropped to fit. */
   square?: boolean;
+  /** TikTok cover only: edits to each picture in the collage, by card key. */
+  collage?: Record<string, ImageEdit>;
+  /** TikTok cover only: the card keys from back to front. */
+  order?: string[];
 };
+export type ImageEdit = { pos?: Point; scale?: number; zoom?: number; focus?: Point };
 export type SlideLayout = {
   width: number;
   height: number;
@@ -40,7 +45,14 @@ export type TikTokEventLayout = {
   caption: TextBox;
   hiddenByTikTok: boolean;
 };
+export type CoverItem = { key: string; imageUrl: string; imageSize: { width: number; height: number } };
+export type CoverImage = Box & { key: string; url: string; source: Box };
+export type TikTokCoverInput = { items: CoverItem[]; topText?: string; measureText: MeasureText };
+/** The TikTok cover: the top box and a collage, drawn in the order of `images` (back to front). It has no date or title. */
+export type TikTokCoverLayout = { width: number; height: number; topBox: TextBox; images: CoverImage[]; hiddenByTikTok: boolean };
 export type AnyLayout = SlideLayout | TikTokEventLayout;
+/** Every kind of slide that can be drawn: the layouts above and the TikTok cover. */
+export type DrawableLayout = AnyLayout | TikTokCoverLayout;
 export type InstagramSlideInput = {
   imageUrl: string;
   imageSize: { width: number; height: number };
@@ -166,4 +178,54 @@ export function layoutTikTokEventSlide(input: InstagramSlideInput, edits: SlideE
   const image = { x: edits.imagePos?.x ?? (SLIDE_WIDTH - w) / 2, y: imageY, w, h, url: input.imageUrl, source: cropSource(imageSize, edits.zoom, edits.focus, aspect) };
   const caption = { ...captionSize, x: edits.captionPos?.x ?? TIKTOK_COLUMN.x, y: edits.captionPos?.y ?? image.y + image.h + GAP };
   return { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, image, caption, hiddenByTikTok: hiddenByTikTok([image, caption]) };
+}
+
+const COLLAGE_BOTTOM = 1580;
+
+/** How big each picture may be in the automatic collage, and how the pictures are laid out, for a number of events. */
+function collageCells(n: number, height: number): { mw: number; mh: number; rows: number; twoColumns: boolean } {
+  const twoColumns = n >= 4;
+  const rows = twoColumns ? Math.ceil(n / 2) : n;
+  const cell = n === 1 ? { mw: TIKTOK_COLUMN.w, mh: height } : n === 2 ? { mw: 500, mh: 560 } : n === 3 ? { mw: 440, mh: 520 } : n === 4 ? { mw: 440, mh: 440 } : n <= 6 ? { mw: 420, mh: 320 } : { mw: 400, mh: (height / rows) * 0.9 };
+  return { ...cell, mh: Math.min(cell.mh, height), rows, twoColumns };
+}
+
+/**
+ * The TikTok cover (decisions 30, 32, 39): the top box and a collage of every event, each picture in its own shape, kept
+ * in the narrow column below the top box. Pictures are staggered left and right and overlap only a little. With edits,
+ * she can move, resize and crop each picture and change which is in front.
+ */
+export function layoutTikTokCover(input: TikTokCoverInput, edits: SlideEdits = {}): TikTokCoverLayout {
+  const { items, measureText } = input;
+  const topBox = textBox({ x: edits.topPos?.x ?? TOP.x, y: edits.topPos?.y ?? TOP.y, w: TOP.w }, TOP, edits.topText ?? input.topText ?? DEFAULT_TOP_TEXT, measureText);
+  const top = topBox.y + topBox.h + GAP;
+  const height = Math.max(200, COLLAGE_BOTTOM - top);
+  const n = items.length;
+  const { mw, mh, rows, twoColumns } = collageCells(Math.max(n, 1), height);
+  const step = twoColumns ? (height - mh) / (rows - 0.5) : rows > 1 ? (height - mh) / (rows - 1) : 0;
+
+  const placed = items.map((item, i): CoverImage => {
+    const scale = Math.min(mw / item.imageSize.width, mh / item.imageSize.height);
+    const autoW = Math.round(item.imageSize.width * scale);
+    const autoH = Math.round(item.imageSize.height * scale);
+    const side = i % 2; // 0 is the left column, 1 the right
+    const row = twoColumns ? Math.floor(i / 2) : i;
+    const rowTop = top + row * step + (twoColumns && side === 1 ? step / 2 : 0);
+    const autoX = n === 1 ? (SLIDE_WIDTH - autoW) / 2 : side === 0 ? TIKTOK_COLUMN.x : TIKTOK_COLUMN.x + TIKTOK_COLUMN.w - autoW;
+    const autoY = rowTop + (mh - autoH) / 2;
+    const edit = edits.collage?.[item.key] ?? {};
+    // A size change grows or shrinks the picture around its middle.
+    const k = clamp(edit.scale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
+    const w = Math.round(autoW * k);
+    const h = Math.round(autoH * k);
+    const x = edit.pos?.x ?? autoX + autoW / 2 - w / 2;
+    const y = edit.pos?.y ?? autoY + autoH / 2 - h / 2;
+    return { key: item.key, url: item.imageUrl, x, y, w, h, source: cropSource(item.imageSize, edit.zoom, edit.focus) };
+  });
+
+  // Front to back: the saved order first, then any picture it does not mention, in the order the events were picked.
+  const known = new Set(placed.map((p) => p.key));
+  const saved = (edits.order ?? []).filter((key, i, all) => known.has(key) && all.indexOf(key) === i);
+  const images = [...saved.map((key) => placed.find((p) => p.key === key)!), ...placed.filter((p) => !saved.includes(p.key))];
+  return { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, topBox, images, hiddenByTikTok: hiddenByTikTok([topBox, ...images]) };
 }

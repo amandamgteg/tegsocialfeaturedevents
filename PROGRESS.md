@@ -536,3 +536,27 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Try the TikTok slides and tell me what looks off (size, spacing, position). Say go for issue 15 when you are ready.
+
+### 2026-10-26 · Issue 15: TikTok cover collage
+**Status:** Done
+
+**What got done:**
+- The TikTok tab now starts with a cover slide: the "Upcoming events from our calendar..." box and a collage of every event you picked. It has no dates or titles.
+- The pictures keep their own shapes and sit in the narrow column, staggered left and right, overlapping only a little. It copes with one picture up to six or more.
+- Click the cover to edit it. You can change the top box wording and drag the box. For each picture you can drag it, change its size, zoom in, and choose which part shows. Click a picture (or its name) to select it.
+- "Bring forward" and "Send back" move the selected picture one step in front of or behind the others. By default the order is the order the events were picked. Images with writing are the ones to bring forward.
+- A warning shows if a picture is dragged where TikTok's buttons or description would cover it.
+- "Reset to original" puts the cover back to the automatic arrangement. Your cover edits are remembered like the other slides' edits, and they are dropped once the last of the picked events is over.
+- The finished-images ZIP now has the cover as TikTok_01_cover.png, followed by the event slides from 02.
+- Tried it in a real browser on live events. The cover, dragging, bring forward and the ZIP all worked.
+- Changed existing tests with your approval: the lists of TikTok slides in two test files now include the cover, and one helper line skips the cover.
+
+**What you can see or try:**
+- Pick three events, press "Make social images", open the TikTok tab, and click the cover to move and layer the pictures.
+
+**What is still waiting:**
+- The Canva layers download (issue 16), then the live walkthrough and phone tests (issue 17).
+- A short or wide picture can leave a gap between the top box and the first picture. You can drag it up, and I can tune the automatic arrangement if you like.
+
+**Needs from Amanda:**
+- Try the cover and tell me what looks off (sizes, overlaps, gaps). Say go for issue 16 when you are ready.

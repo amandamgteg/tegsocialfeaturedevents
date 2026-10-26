@@ -1,8 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
-import { MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type AnyLayout, type SlideEdits } from "@/lib/slideLayout";
+import { MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type SlideEdits, type SlideLayout, type TikTokEventLayout } from "@/lib/slideLayout";
 import type { WallItem } from "./PhotoWall";
 import { SlidePreview } from "./SlidePreview";
+import { slideWarning } from "./slideWarning";
 
 type BoxName = "top" | "image" | "caption";
 const STAGE_WIDTH = 360;
@@ -24,7 +25,7 @@ export function SlideEditPanel({
 }: {
   platform: "Instagram" | "TikTok";
   item: WallItem;
-  layout: AnyLayout;
+  layout: SlideLayout | TikTokEventLayout;
   imageSize: { width: number; height: number };
   edits: SlideEdits;
   onChange: (edits: SlideEdits) => void;
@@ -92,7 +93,7 @@ export function SlideEditPanel({
 
   const gapAbove = topBox ? Math.round(image.y - (topBox.y + topBox.h)) : 0;
   const gapBelow = Math.round(caption.y - (image.y + image.h));
-  const warning = "topBox" in layout ? (layout.overLinkLine ? "The title box runs into the space kept for the link sticker." : null) : layout.hiddenByTikTok ? "Part of this slide may be covered by TikTok's buttons or description." : null;
+  const warning = slideWarning(layout);
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 30, background: "#000d", display: "flex", justifyContent: "center", overflow: "auto", padding: "24px 16px" }}>

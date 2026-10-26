@@ -62,6 +62,7 @@ describe("Social image editor", () => {
     expect(slides.map((s: { platform: string; date: string; title: string }) => [s.platform, s.date, s.title])).toEqual([
       ["Instagram", "2026-10-07", "Event a"],
       ["Instagram", "2026-11-07", "Event b"],
+      ["TikTok", "2026-10-07", "Cover"],
       ["TikTok", "2026-10-07", "Event a"],
       ["TikTok", "2026-11-07", "Event b"],
     ]);
