@@ -581,3 +581,27 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Try one slide's layers in Canva and tell me how it goes. Say go for issue 17 when you are ready.
+
+### 2026-10-26 · Issue 17: Live walkthrough and test record (my half)
+**Status:** Partly done. Everything I can check from here passes. The phone and Canva checks need you.
+
+**What got done:**
+- Walked through the whole tool in a real browser against the live events and live feed: picked three events, opened "Make social images", edited slides, refreshed, reset and downloaded. What I saw:
+  - The Instagram tab showed 3 slides, and the date read like "Oct 26 - Coffee and Conversation with Cops".
+  - Edits are saved as you make them. After a page refresh, your picks, an Instagram edit and a TikTok cover edit were all still there.
+  - "Reset to original" put one slide back to normal, and "Reset everything" forgot every saved edit.
+  - "Download finished images" gave a ZIP of 7 files (3 Instagram, the TikTok cover, 3 TikTok events). "Download layers for Canva" gave a ZIP of 33 files in a folder per slide.
+  - No errors showed up in the page.
+- Date wording for ranges and lists ("July 1-3", "July 1, 4, 6", "Dec 31-Jan 1") is covered by automatic tests. No starred event in the feed right now runs over several days, so I could not see one on the live site.
+
+**What you can see or try:**
+- Everything is on the live site. Nothing new to look at.
+
+**What is still waiting (these need you):**
+1. Instagram: post a story using one of the downloaded Instagram slides, add your link sticker, and check nothing in the picture is covered (especially a slide with a two-line title).
+2. TikTok: post a private test photo post with the TikTok cover and two or three event slides. Check the right-hand buttons and the description don't cover anything.
+3. Canva: unzip the layers file, upload one slide's pictures to a 1080 by 1920 Canva page at the top left, and see how they behave.
+4. If any measurement in SPEC section 13 needs adjusting after those tests, I change it with your approval.
+
+**Needs from Amanda:**
+- The three checks above, with screenshots of anything that looks wrong. Tell me what you see and I will adjust.
