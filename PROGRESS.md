@@ -665,3 +665,28 @@ Copy this and fill it in:
 - Nothing. Issues 11 to 17 are all done.
 
 **Needs from Amanda:** Nothing
+
+### 2026-10-26 · Social media images: finished
+**Status:** Done
+
+**What got done:**
+- The tool now covers the whole weekly job, from picking events to finished social images:
+  - Pick events and download their original pictures, as before. Any card can use a different image if the tool found the wrong one.
+  - "Make social images" makes one Instagram slide per event, and for TikTok a cover collage followed by one slide per event. TikTok event slides have a plain black background.
+  - Every slide can be edited: the wording, dragging the boxes and pictures, picture size, zoom and crop. The TikTok cover also has bring forward and send back for the pictures. Warnings show if something would be covered by the Instagram link sticker or by TikTok's buttons or description.
+  - Your edits are remembered in your browser, with Reset for one slide or for everything. They are dropped once the event is over.
+  - "Download finished images" and "Download layers for Canva" each save the slides on the tab that is open. The layers download includes an editable PowerPoint file for each slide, so the words can be changed in Canva.
+- Issues 11 to 17 are all done, and the decisions and measurements are written in SPEC.md (decisions 28 to 46, section 13).
+- Every check was done on the live site and on real phones, and the Canva import works.
+
+**What you can see or try:**
+- The whole thing is live. Each week: pick your events, press "Make social images", edit if you want to, and download from each tab.
+
+**What is still waiting:**
+- Nothing is waiting. Small things worth knowing:
+  - Your saved edits stay in one browser on one computer.
+  - The page's "Start over" button also clears the saved slide edits.
+  - A short or wide picture can leave a gap under the top box on the TikTok cover. You can drag it up, and the automatic arrangement can be tuned if it bothers you.
+  - Left out on purpose: a phone layout, changing fonts or colours, automatic detection of writing in images, and video.
+
+**Needs from Amanda:** Nothing
