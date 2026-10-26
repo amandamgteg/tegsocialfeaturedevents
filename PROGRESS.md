@@ -560,3 +560,24 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - Try the cover and tell me what looks off (sizes, overlaps, gaps). Say go for issue 16 when you are ready.
+
+### 2026-10-26 · Issue 16: Layers for Canva
+**Status:** Done
+
+**What got done:**
+- The "Make social images" window has a new, separate button: "Download layers for Canva". It is optional. The other downloads work exactly as before, and nothing makes layers unless you press it.
+- It saves one ZIP with a folder for every slide, Instagram and TikTok (the cover too), whichever tab is open. Your edits are included.
+- Each folder has the finished image (00_finished.png) and then each piece as its own picture, from the back to the front: 01_background, 02_event-image, 03_top-box, 04_date-and-title-box. On the TikTok cover there is one picture layer per event, in the order you set with bring forward and send back.
+- Every layer is the full size of the slide and see-through except for its one piece, so the layers line up exactly when you place them at the top left in Canva. Laid over each other they make the finished image. I checked this on live events: the layers add up to the finished image, off by at most 1 shade of colour on a few edge pixels.
+- The text arrives as pictures, so you can move and resize it in Canva but not change the words.
+- A short note on the button tells you to unzip the file first.
+- Updated SPEC.md (decision 43) with how the ZIP is laid out.
+
+**What you can see or try:**
+- Pick a few events, press "Make social images", then "Download layers for Canva". Unzip it and upload one slide's pictures to Canva. Place each at the top left of a 1080 by 1920 page.
+
+**What is still waiting:**
+- Trying the layers in Canva for real and the phone tests for TikTok and Instagram (issue 17). I can't open Canva from here, so how well the layers behave there is still to be seen. If the see-through margins make them awkward to select, a tightly cropped version is an easy next step.
+
+**Needs from Amanda:**
+- Try one slide's layers in Canva and tell me how it goes. Say go for issue 17 when you are ready.

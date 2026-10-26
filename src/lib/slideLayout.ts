@@ -229,3 +229,12 @@ export function layoutTikTokCover(input: TikTokCoverInput, edits: SlideEdits = {
   const images = [...saved.map((key) => placed.find((p) => p.key === key)!), ...placed.filter((p) => !saved.includes(p.key))];
   return { width: SLIDE_WIDTH, height: SLIDE_HEIGHT, topBox, images, hiddenByTikTok: hiddenByTikTok([topBox, ...images]) };
 }
+
+/**
+ * The names of a slide's layers, from back to front, in the order `renderLayers` draws them (decision 43).
+ * A cover has one picture layer per event, numbered from the back.
+ */
+export function layerNames(layout: DrawableLayout): string[] {
+  if ("images" in layout) return ["background", ...layout.images.map((_, i) => `picture-${i + 1}`), "top-box"];
+  return ["background", "event-image", ...("topBox" in layout ? ["top-box"] : []), "date-and-title-box"];
+}

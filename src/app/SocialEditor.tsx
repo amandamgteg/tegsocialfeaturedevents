@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { PartialDownloadError } from "@/lib/download";
 import { layoutInstagramSlide, layoutTikTokCover, layoutTikTokEventSlide, type AnyLayout, type DrawableLayout, type SlideEdits, type TikTokCoverLayout } from "@/lib/slideLayout";
 import { loadEdits, resetAll, resetSlide, saveEdits } from "@/lib/slideEdits";
-import { downloadFinished } from "@/lib/socialZip";
+import { downloadFinished, downloadLayers } from "@/lib/socialZip";
 import { canvasTextMeasurer, measureImage } from "./slideSupport";
 import type { WallItem } from "./PhotoWall";
 import { CoverEditPanel } from "./CoverEditPanel";
@@ -42,6 +42,7 @@ export function SocialEditor({
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [drawErrors, setDrawErrors] = useState<Record<string, true>>({});
   const [busy, setBusy] = useState(false);
+  const [busyLayers, setBusyLayers] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const measureText = useMemo(() => canvasTextMeasurer(), []);
   // `items` is a new array on every render of the page, so the effect watches what is actually in it.
@@ -134,6 +135,19 @@ export function SocialEditor({
     }
   };
 
+  // The optional extra: every slide, both platforms, each as separate pictures to take into Canva (decision 43).
+  const downloadForCanva = async () => {
+    setDownloadError(null);
+    setBusyLayers(true);
+    try {
+      await downloadLayers(ready);
+    } catch (err) {
+      setDownloadError(err instanceof PartialDownloadError ? err.message : "Couldn't download the layers. Please try again.");
+    } finally {
+      setBusyLayers(false);
+    }
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 20, background: "#000c", display: "flex", justifyContent: "center", overflow: "auto", padding: "24px 16px" }}>
       <div role="dialog" aria-modal="true" aria-label="Make social images" style={{ background: "#08181d", border: "2px solid #f5a93b", borderRadius: 18, padding: 24, width: "min(1100px, 100%)", height: "fit-content", color: "#eaf4f2" }}>
@@ -193,6 +207,9 @@ export function SocialEditor({
           <button type="button" onClick={download} disabled={busy || ready.length === 0} style={{ ...button, border: 0, background: ready.length ? "#f5a93b" : "#2d5e66", color: ready.length ? "#1a1200" : "#9fbfbe" }}>
             {busy ? "Preparing download…" : "Download finished images"}
           </button>
+          <button type="button" onClick={downloadForCanva} disabled={busyLayers || ready.length === 0} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
+            {busyLayers ? "Preparing layers…" : "Download layers for Canva"}
+          </button>
           <button type="button" onClick={onDownloadOriginals} disabled={downloadingOriginals} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
             Download event images
           </button>
@@ -212,6 +229,7 @@ export function SocialEditor({
             </button>
           )}
         </div>
+        <p style={{ margin: "12px 0 0", fontSize: 13, color: "#9fbfbe" }}>Layers for Canva: unzip the file first, then upload the pictures from one slide&apos;s folder to Canva. Each is the size of the slide, so they line up.</p>
       </div>
       {editingKey === COVER_ID && coverLayout && (
         <CoverEditPanel
