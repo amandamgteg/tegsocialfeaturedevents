@@ -48,15 +48,15 @@ describe("Download layers for Canva", () => {
     expect(mocks.downloadLayers).not.toHaveBeenCalled();
   });
 
-  it("makes layers for every slide, Instagram and TikTok, whichever tab is open, and does not make the finished ZIP", async () => {
+  it("makes layers for the slides on the open tab, and does not make the finished ZIP", async () => {
     render(<SocialEditor {...props} />);
     await screen.findAllByRole("img");
     fireEvent.click(screen.getByRole("button", { name: "Download layers for Canva" }));
     await waitFor(() => expect(mocks.downloadLayers).toHaveBeenCalledTimes(1));
     expect(mocks.downloadFinished).not.toHaveBeenCalled();
     const slides = mocks.downloadLayers.mock.calls[0][0] as { platform: string; title: string; isCover?: boolean }[];
-    expect(slides.map((s) => `${s.platform}:${s.title}`)).toEqual(["Instagram:Event a", "Instagram:Event b", "TikTok:Cover", "TikTok:Event a", "TikTok:Event b"]);
-    expect(slides.filter((s) => s.isCover)).toHaveLength(1);
+    expect(slides.map((s) => `${s.platform}:${s.title}`)).toEqual(["Instagram:Event a", "Instagram:Event b"]);
+    expect(slides.filter((s) => s.isCover)).toHaveLength(0);
   });
 
   it("uses the slides as edited", async () => {

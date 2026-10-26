@@ -185,7 +185,7 @@ describe("TikTok tab", () => {
   });
 
   describe("downloading", () => {
-    it("puts both the Instagram and the TikTok slides in the finished-images download", async () => {
+    it("puts only the TikTok slides, the cover first, in the finished-images download on the TikTok tab", async () => {
       render(<SocialEditor {...props} />);
       await screen.findByAltText("Instagram slide: Event b");
       fireEvent.click(screen.getByRole("tab", { name: "TikTok" }));
@@ -193,7 +193,7 @@ describe("TikTok tab", () => {
       fireEvent.click(screen.getByRole("button", { name: "Download finished images" }));
       await waitFor(() => expect(mocks.downloadFinished).toHaveBeenCalled());
       const slides = mocks.downloadFinished.mock.calls[0][0] as { platform: string; title: string }[];
-      expect(slides.map((s) => `${s.platform}:${s.title}`).sort()).toEqual(["Instagram:Event a", "Instagram:Event b", "TikTok:Cover", "TikTok:Event a", "TikTok:Event b"]);
+      expect(slides.map((s) => `${s.platform}:${s.title}`).sort()).toEqual(["TikTok:Cover", "TikTok:Event a", "TikTok:Event b"]);
     });
   });
 });

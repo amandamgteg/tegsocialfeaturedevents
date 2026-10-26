@@ -605,3 +605,22 @@ Copy this and fill it in:
 
 **Needs from Amanda:**
 - The three checks above, with screenshots of anything that looks wrong. Tell me what you see and I will adjust.
+
+### 2026-10-26 · Change: downloads follow the tab you are on
+**Status:** Done
+
+**What got done:**
+- "Download finished images" now saves only the slides on the tab that is open. On the Instagram tab you get the Instagram slides. On the TikTok tab you get the TikTok slides, with the cover first.
+- "Download layers for Canva" works the same way, at your request.
+- "Download event images" is unchanged and still saves the original pictures of everything you picked.
+- A short note under the buttons says the downloads follow the open tab.
+- Updated SPEC.md (decision 42 and step 11) to match.
+- Changed three earlier tests that expected one ZIP with both platforms, with your approval. They now expect only the open tab's slides.
+
+**What you can see or try:**
+- Open the Instagram tab and press "Download finished images", then do the same on the TikTok tab.
+
+**What is still waiting:**
+- The phone and Canva checks from issue 17.
+
+**Needs from Amanda:** Nothing new

@@ -97,6 +97,8 @@ export function SocialEditor({
     ...slides.filter((s) => s.platform === "TikTok").flatMap((s) => (s.layout ? [{ platform: s.platform, date: s.item.card.date, title: s.item.card.title, layout: s.layout }] : [])),
   ];
   const shown = slides.filter((s) => s.platform === platform);
+  // Both download buttons save only the slides on the tab that is open (decision 42).
+  const readyHere = ready.filter((s) => s.platform === platform);
   const editing = slides.find((s) => s.id === editingKey);
 
   // Edits are remembered in this browser as they are made (decision 41). The event's last date lets them expire.
@@ -127,7 +129,7 @@ export function SocialEditor({
     setDownloadError(null);
     setBusy(true);
     try {
-      await downloadFinished(ready);
+      await downloadFinished(readyHere);
     } catch (err) {
       setDownloadError(err instanceof PartialDownloadError ? err.message : "Couldn't download the finished images. Please try again.");
     } finally {
@@ -140,7 +142,7 @@ export function SocialEditor({
     setDownloadError(null);
     setBusyLayers(true);
     try {
-      await downloadLayers(ready);
+      await downloadLayers(readyHere);
     } catch (err) {
       setDownloadError(err instanceof PartialDownloadError ? err.message : "Couldn't download the layers. Please try again.");
     } finally {
@@ -204,10 +206,10 @@ export function SocialEditor({
           ))}
         </ul>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-          <button type="button" onClick={download} disabled={busy || ready.length === 0} style={{ ...button, border: 0, background: ready.length ? "#f5a93b" : "#2d5e66", color: ready.length ? "#1a1200" : "#9fbfbe" }}>
+          <button type="button" onClick={download} disabled={busy || readyHere.length === 0} style={{ ...button, border: 0, background: readyHere.length ? "#f5a93b" : "#2d5e66", color: readyHere.length ? "#1a1200" : "#9fbfbe" }}>
             {busy ? "Preparing download…" : "Download finished images"}
           </button>
-          <button type="button" onClick={downloadForCanva} disabled={busyLayers || ready.length === 0} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
+          <button type="button" onClick={downloadForCanva} disabled={busyLayers || readyHere.length === 0} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
             {busyLayers ? "Preparing layers…" : "Download layers for Canva"}
           </button>
           <button type="button" onClick={onDownloadOriginals} disabled={downloadingOriginals} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>
@@ -229,7 +231,7 @@ export function SocialEditor({
             </button>
           )}
         </div>
-        <p style={{ margin: "12px 0 0", fontSize: 13, color: "#9fbfbe" }}>Layers for Canva: unzip the file first, then upload the pictures from one slide&apos;s folder to Canva. Each is the size of the slide, so they line up.</p>
+        <p style={{ margin: "12px 0 0", fontSize: 13, color: "#9fbfbe" }}>Both downloads save the slides on the tab you are on. Layers for Canva: unzip the file first, then upload the pictures from one slide&apos;s folder to Canva. Each is the size of the slide, so they line up.</p>
       </div>
       {editingKey === COVER_ID && coverLayout && (
         <CoverEditPanel
