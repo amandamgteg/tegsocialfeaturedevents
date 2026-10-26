@@ -1,8 +1,9 @@
 import { zipSync } from "fflate";
 import { PartialDownloadError } from "./download";
 import { saveFile, slugFor, uniqueNames } from "./files";
-import { renderLayers, renderSlide } from "./slideDraw";
+import { renderLayers, renderPieces, renderSlide } from "./slideDraw";
 import { layerNames, type DrawableLayout } from "./slideLayout";
+import { buildEditablePptx } from "./slidePptx";
 
 export type SocialSlide = { platform: "Instagram" | "TikTok"; date: string; title: string; layout: DrawableLayout; /** The TikTok cover, which is always file 01. */ isCover?: boolean };
 
@@ -53,8 +54,8 @@ export async function downloadFinished(slides: SocialSlide[]): Promise<void> {
 }
 
 /**
- * Saves a ZIP with a folder for each slide: the finished image as 00_finished.png and then each layer, back to front,
- * as 01_background.png, 02_event-image.png and so on (decision 43). Slides that can't be made are skipped, the rest are
+ * Saves a ZIP with a folder for each slide: the finished image as 00_finished.png, the same slide with live text as
+ * 00_editable.pptx, and then each layer, back to front, as 01_background.png, 02_event-image.png and so on (decision 43). Slides that can't be made are skipped, the rest are
  * saved, and then a PartialDownloadError names the ones that failed.
  */
 export async function downloadLayers(slides: SocialSlide[]): Promise<void> {
@@ -62,9 +63,12 @@ export async function downloadLayers(slides: SocialSlide[]): Promise<void> {
   const results = await Promise.all(
     plan(slides).map(async ({ slide, name }) => {
       try {
-        const [finished, layers] = await Promise.all([renderSlide(slide.layout), renderLayers(slide.layout)]);
+        const [finished, layers, pieces] = await Promise.all([renderSlide(slide.layout), renderLayers(slide.layout), renderPieces(slide.layout)]);
         const names = layerNames(slide.layout);
-        const files: [string, Uint8Array][] = [[`${name}/00_finished.png`, await pngBytes(finished)]];
+        const files: [string, Uint8Array][] = [
+          [`${name}/00_finished.png`, await pngBytes(finished)],
+          [`${name}/00_editable.pptx`, await pngBytes(await buildEditablePptx(slide.layout, pieces))], // the wording is live text
+        ];
         for (let i = 0; i < layers.length; i++) files.push([`${name}/${pad2(i + 1)}_${names[i] ?? "layer"}.png`, await pngBytes(layers[i])]);
         return { slide, files };
       } catch {

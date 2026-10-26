@@ -62,8 +62,14 @@ describe("renderLayers", () => {
       it("draws the background on the first layer only, and leaves every other layer transparent", async () => {
         await renderLayers(layout);
         const [first, ...rest] = canvases;
-        expect(first.calls.filter((c) => c[0] === "drawImage")).toHaveLength(1);
-        expect(first.calls.some((c) => c[0] === "fillRect" || c[0] === "fillText")).toBe(false);
+        if ("topBox" in layout || "images" in layout) {
+          expect(first.calls.filter((c) => c[0] === "drawImage")).toHaveLength(1);
+          expect(first.calls.some((c) => c[0] === "fillRect" || c[0] === "fillText")).toBe(false);
+        } else {
+          // A TikTok event slide has a plain black background instead of the lab picture.
+          expect(first.calls.some((c) => c[0] === "drawImage")).toBe(false);
+          expect(first.calls.filter((c) => c[0] === "fillRect").map((c) => c.slice(1))).toEqual([[0, 0, 1080, 1920]]);
+        }
         for (const c of rest) {
           expect(c.calls.some((x) => x[0] === "fillRect" && x[3] === 1080 && x[4] === 1920)).toBe(false); // nothing paints the whole slide
         }

@@ -29,12 +29,12 @@ afterEach(() => {
 });
 
 describe("renderSlide with a TikTok event slide", () => {
-  it("draws the background, the image and only the date-and-title box (no top box)", async () => {
+  it("draws a black background, the image and only the date-and-title box (no top box)", async () => {
     const blob = await renderSlide(layout);
     expect(blob.type).toBe("image/png");
-    expect(calls.filter((c) => c[0] === "drawImage")).toHaveLength(2);
+    expect(calls.filter((c) => c[0] === "drawImage")).toHaveLength(1);
     const rects = calls.filter((c) => c[0] === "fillRect").map((c) => c.slice(1));
-    expect(rects).toEqual([[layout.caption.x, layout.caption.y, layout.caption.w, layout.caption.h]]);
+    expect(rects).toEqual([[0, 0, 1080, 1920], [layout.caption.x, layout.caption.y, layout.caption.w, layout.caption.h]]);
     expect(calls.filter((c) => c[0] === "fillText").map((c) => c[1])).toEqual(layout.caption.lines);
   });
 
@@ -43,6 +43,6 @@ describe("renderSlide with a TikTok event slide", () => {
     await renderSlide(square);
     const draws = calls.filter((c) => c[0] === "drawImage");
     const { x, y, w, h, source: s } = square.image;
-    expect(draws[1].slice(2)).toEqual([s.x, s.y, s.w, s.h, x, y, w, h]);
+    expect(draws[0].slice(2)).toEqual([s.x, s.y, s.w, s.h, x, y, w, h]);
   });
 });

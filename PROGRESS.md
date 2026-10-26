@@ -624,3 +624,24 @@ Copy this and fill it in:
 - The phone and Canva checks from issue 17.
 
 **Needs from Amanda:** Nothing new
+
+### 2026-10-26 · Changes after your tests: white line, black TikTok slides, editable text in Canva
+**Status:** Done
+
+**What got done:**
+- White line at the bottom: it came from the background picture itself, whose last two rows were white. I repaired the picture, and the line is gone from every Instagram and TikTok slide. I checked the bottom rows of the finished images and they are dark.
+- TikTok event slides (slide 2 onwards) now have a plain black background instead of the lab picture. The TikTok cover and the Instagram slides still have the lab picture.
+- Editable text in Canva: every slide's folder in "Download layers for Canva" now also has 00_editable.pptx. It is the same slide as a PowerPoint file, with the words as real Arial text, the black boxes behind them, and the pictures placed where they are on the slide. In Canva, choose Create a design, then Import file, and pick that .pptx. The words will be editable. The separate layer pictures are still there for moving pieces around.
+- I opened three of the new files in LibreOffice (a stand-in, since I can't open Canva) and they look the same as the finished images, with live text.
+- The lowest point you want things to go (the "Hot Pizza" slide): on Instagram, that slide's title box ends at y=1590, which is exactly where the link-sticker warning line already is. So nothing needed to change there.
+- Updated SPEC.md (decisions 35 and 43, the modules list and the TikTok background row). Changed three earlier test files with your approval, and added one new software library (pptxgenjs).
+
+**What you can see or try:**
+- Download layers for Canva, unzip, and import a slide's 00_editable.pptx into Canva.
+
+**What is still waiting:**
+- Whether Canva keeps the font and sizes exactly as I expect. I can't open Canva from here.
+- The Instagram and TikTok phone checks you did look good. If you want to change any measurement in SPEC section 13, tell me.
+
+**Needs from Amanda:**
+- Try the .pptx in Canva and tell me whether the words are editable and look right.

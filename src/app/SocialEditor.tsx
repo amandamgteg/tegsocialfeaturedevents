@@ -231,7 +231,7 @@ export function SocialEditor({
             </button>
           )}
         </div>
-        <p style={{ margin: "12px 0 0", fontSize: 13, color: "#9fbfbe" }}>Both downloads save the slides on the tab you are on. Layers for Canva: unzip the file first, then upload the pictures from one slide&apos;s folder to Canva. Each is the size of the slide, so they line up.</p>
+        <p style={{ margin: "12px 0 0", fontSize: 13, color: "#9fbfbe" }}>Both downloads save the slides on the tab you are on. Layers for Canva: unzip the file first. To change the words in Canva, choose Create a design, then Import file, and pick the .pptx file in a slide&apos;s folder. To move pieces around, upload the pictures from that folder instead. Each is the size of the slide, so they line up.</p>
       </div>
       {editingKey === COVER_ID && coverLayout && (
         <CoverEditPanel

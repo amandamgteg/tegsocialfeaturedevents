@@ -5,8 +5,9 @@ import { PartialDownloadError } from "@/lib/download";
 import { layoutInstagramSlide, layoutTikTokCover, layoutTikTokEventSlide, type DrawableLayout } from "@/lib/slideLayout";
 import { captureDownloads, readZip, bytes, type Saved } from "../helpers/download";
 
-const mocks = vi.hoisted(() => ({ renderSlide: vi.fn(), renderLayers: vi.fn() }));
-vi.mock("@/lib/slideDraw", () => mocks);
+const mocks = vi.hoisted(() => ({ renderSlide: vi.fn(), renderLayers: vi.fn(), renderPieces: vi.fn(), buildEditablePptx: vi.fn() }));
+vi.mock("@/lib/slideDraw", () => ({ renderSlide: mocks.renderSlide, renderLayers: mocks.renderLayers, renderPieces: mocks.renderPieces }));
+vi.mock("@/lib/slidePptx", () => ({ buildEditablePptx: mocks.buildEditablePptx }));
 
 const measureText = (t: string, s: number) => t.length * s * 0.5;
 const base = (title: string) => ({ imageUrl: `https://img.example.com/${title}.png`, imageSize: { width: 800, height: 800 }, dates: ["2026-10-07"], title, measureText });
@@ -24,6 +25,8 @@ let saved: Saved[];
 beforeEach(() => {
   saved = captureDownloads();
   mocks.renderSlide.mockReset().mockImplementation(async () => new Blob([bytes(1)], { type: "image/png" }));
+  mocks.renderPieces.mockReset().mockResolvedValue({ background: null, pictures: [] });
+  mocks.buildEditablePptx.mockReset().mockImplementation(async () => new Blob([bytes(99)], { type: "application/octet-stream" }));
   mocks.renderLayers.mockReset().mockImplementation(async (layout: DrawableLayout) => {
     const count = "images" in layout ? layout.images.length + 2 : "topBox" in layout ? 4 : 3;
     return Array.from({ length: count }, (_, i) => new Blob([bytes(10 + i)], { type: "image/png" }));
@@ -32,12 +35,13 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("downloadLayers", () => {
-  it("saves one ZIP, with a folder for each slide holding the finished image and its layers", async () => {
+  it("saves one ZIP, with a folder for each slide holding the finished image, the editable file and the layers", async () => {
     await downloadLayers([ig("2026-10-07", "Tinker Tuesday")]);
     expect(saved).toHaveLength(1);
     expect(saved[0].name).toBe("teg-social-layers.zip");
     expect(Object.keys(await readZip(saved[0].blob))).toEqual([
       "Instagram_2026-10-07_tinker-tuesday/00_finished.png",
+      "Instagram_2026-10-07_tinker-tuesday/00_editable.pptx",
       "Instagram_2026-10-07_tinker-tuesday/01_background.png",
       "Instagram_2026-10-07_tinker-tuesday/02_event-image.png",
       "Instagram_2026-10-07_tinker-tuesday/03_top-box.png",
@@ -63,6 +67,7 @@ describe("downloadLayers", () => {
     await downloadLayers([coverSlide("2026-10-07")]);
     expect(Object.keys(await readZip(saved[0].blob))).toEqual([
       "TikTok_01_cover/00_finished.png",
+      "TikTok_01_cover/00_editable.pptx",
       "TikTok_01_cover/01_background.png",
       "TikTok_01_cover/02_picture-1.png",
       "TikTok_01_cover/03_picture-2.png",
@@ -97,5 +102,29 @@ describe("downloadLayers", () => {
   it("saves nothing for an empty list", async () => {
     await downloadLayers([]);
     expect(saved).toHaveLength(0);
+  });
+});
+
+describe("downloadLayers with the editable file", () => {
+  it("puts an editable PowerPoint file in each slide's folder, made from that slide's layout and pieces", async () => {
+    const pieces = { background: new Blob(["bg"]), pictures: [new Blob(["pic"])] };
+    mocks.renderPieces.mockResolvedValue(pieces);
+    const slide = ig("2026-10-07", "Tinker Tuesday");
+    await downloadLayers([slide]);
+    expect(mocks.buildEditablePptx).toHaveBeenCalledWith(slide.layout, pieces);
+    const files = await readZip(saved[0].blob);
+    expect([...files["Instagram_2026-10-07_tinker-tuesday/00_editable.pptx"]]).toEqual([...bytes(99)]);
+  });
+
+  it("names the slide as failed if its editable file cannot be made, and still saves the others", async () => {
+    mocks.buildEditablePptx.mockImplementation(async (layout: DrawableLayout) => {
+      if ("image" in layout && layout.image.url.includes("Bad")) throw new Error("boom");
+      return new Blob([bytes(99)]);
+    });
+    const err = await downloadLayers([ig("2026-10-07", "Good"), ig("2026-10-08", "Bad")]).catch((e) => e);
+    expect(err).toBeInstanceOf(PartialDownloadError);
+    expect((err as PartialDownloadError).failed).toEqual(["Bad"]);
+    const folders = [...new Set(Object.keys(await readZip(saved[0].blob)).map((n) => n.split("/")[0]))];
+    expect(folders).toEqual(["Instagram_2026-10-07_good"]);
   });
 });

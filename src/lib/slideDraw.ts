@@ -22,12 +22,17 @@ function drawTextBox(ctx: CanvasRenderingContext2D, box: TextBox) {
 }
 
 type Paint = (ctx: CanvasRenderingContext2D) => void;
-type Loaded = { background: ImageBitmap; bitmaps: ImageBitmap[]; paints: Paint[] };
+type Loaded = { background: ImageBitmap | null; bitmaps: ImageBitmap[]; pictures: Picture[]; paints: Paint[] };
+type Picture = { x: number; y: number; w: number; h: number; url: string; source: { x: number; y: number; w: number; h: number } };
 
 function newCanvas(layout: DrawableLayout): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+  return makeCanvas(layout.width, layout.height);
+}
+
+function makeCanvas(width: number, height: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
   const canvas = document.createElement("canvas");
-  canvas.width = layout.width;
-  canvas.height = layout.height;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Couldn't draw the slide in this browser");
   return { canvas, ctx };
@@ -35,35 +40,46 @@ function newCanvas(layout: DrawableLayout): { canvas: HTMLCanvasElement; ctx: Ca
 
 const toPng = (canvas: HTMLCanvasElement): Promise<Blob> => new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Couldn't save the slide"))), "image/png"));
 
+/** Draws a picture (or the part of it she zoomed in on) into a frame whose top left is at (x, y). */
+function paintPicture(ctx: CanvasRenderingContext2D, bitmap: ImageBitmap, p: Picture, x: number, y: number) {
+  const s = p.source;
+  const wholePicture = s.x <= 0 && s.y <= 0 && s.w >= bitmap.width && s.h >= bitmap.height;
+  if (wholePicture) ctx.drawImage(bitmap, x, y, p.w, p.h);
+  else ctx.drawImage(bitmap, s.x, s.y, s.w, s.h, x, y, p.w, p.h);
+}
+
+/** A TikTok event slide has a plain black background. The Instagram slide and the TikTok cover have the lab picture (decision 35). */
+const hasLabBackground = (layout: DrawableLayout) => "images" in layout || "topBox" in layout;
+
 /** Loads the pictures and sets out the drawing as steps from back to front: background, pictures, then the text boxes. */
 async function load(layout: DrawableLayout): Promise<Loaded> {
   // A cover has many pictures, drawn back to front. Every other slide has one.
-  const pictures = "images" in layout ? layout.images : [layout.image];
+  const pictures: Picture[] = "images" in layout ? layout.images : [layout.image];
+  const lab = hasLabBackground(layout);
   const [background, ...bitmaps] = await Promise.all([
-    loadBitmap(BACKGROUND_URL, "background"),
+    lab ? loadBitmap(BACKGROUND_URL, "background") : Promise.resolve(null),
     ...pictures.map((p) => loadBitmap(`/api/image?url=${encodeURIComponent(p.url)}`, "event image")),
   ]);
   const paints: Paint[] = [
     (ctx) => {
+      if (!background) {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, layout.width, layout.height);
+        return;
+      }
       // Crop the background to fill the tall slide, keeping its middle (decision 35).
       const scale = layout.height / background.height;
       const keptWidth = layout.width / scale;
       ctx.drawImage(background, (background.width - keptWidth) / 2, 0, keptWidth, background.height, 0, 0, layout.width, layout.height);
     },
-    ...pictures.map((p, i): Paint => (ctx) => {
-      const bitmap = bitmaps[i];
-      const s = p.source;
-      const wholePicture = s.x <= 0 && s.y <= 0 && s.w >= bitmap.width && s.h >= bitmap.height;
-      if (wholePicture) ctx.drawImage(bitmap, p.x, p.y, p.w, p.h);
-      else ctx.drawImage(bitmap, s.x, s.y, s.w, s.h, p.x, p.y, p.w, p.h); // only the part she zoomed in on
-    }),
+    ...pictures.map((p, i): Paint => (ctx) => paintPicture(ctx, bitmaps[i], p, p.x, p.y)),
     ...("topBox" in layout ? [(ctx: CanvasRenderingContext2D) => drawTextBox(ctx, layout.topBox)] : []), // a TikTok event slide has none
     ...("caption" in layout ? [(ctx: CanvasRenderingContext2D) => drawTextBox(ctx, layout.caption)] : []), // the TikTok cover has none
   ];
-  return { background, bitmaps, paints };
+  return { background, bitmaps, pictures, paints };
 }
 
-const release = ({ background, bitmaps }: Loaded) => [background, ...bitmaps].forEach((b) => b.close?.());
+const release = ({ background, bitmaps }: Loaded) => [background, ...bitmaps].forEach((b) => b?.close?.());
 
 /**
  * Draws a slide to a PNG, in the browser (decision 28). The event pictures come through our image proxy (decision 16).
@@ -93,6 +109,32 @@ export async function renderLayers(layout: DrawableLayout): Promise<Blob[]> {
         return toPng(canvas);
       }),
     );
+  } finally {
+    release(loaded);
+  }
+}
+
+/**
+ * The pieces for an editable file (decision 43): the background as a full-slide PNG (null for a plain black slide) and each
+ * picture cut to its own frame, back to front, with no empty space around it.
+ */
+export async function renderPieces(layout: DrawableLayout): Promise<{ background: Blob | null; pictures: Blob[] }> {
+  const loaded = await load(layout);
+  try {
+    let background: Blob | null = null;
+    if (loaded.background) {
+      const { canvas, ctx } = newCanvas(layout);
+      loaded.paints[0](ctx);
+      background = await toPng(canvas);
+    }
+    const pictures = await Promise.all(
+      loaded.pictures.map((p, i) => {
+        const { canvas, ctx } = makeCanvas(p.w, p.h);
+        paintPicture(ctx, loaded.bitmaps[i], p, 0, 0);
+        return toPng(canvas);
+      }),
+    );
+    return { background, pictures };
   } finally {
     release(loaded);
   }

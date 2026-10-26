@@ -74,7 +74,7 @@ Cards are sorted soonest first. An event the feed marks as repeating (weekly, bi
 | 32 | Event images keep their own shape (square, landscape or portrait). Instagram images are at most about 960 px wide. TikTok images are at most 800 px wide. A "Fill square" button on a TikTok event slide zooms the image into an 800×800 square. | Her call. Wide posters get small on TikTok, so she chooses to crop to one part. | client |
 | 33 | The date-and-title text reads "Mon D - Title" with a dash. Month names: Jan, Feb, March, Apr, May, June, July, Aug, Sept, Oct, Nov, Dec, in title case, with no "st" or "th". Consecutive days read "July 1-3". Other dates read "July 1, 4, 6". The tool fills the date in from the feed. She can edit it. | Her rules. | client |
 | 34 | Text is Arial in white on black. No other colours. The tool uses Arial installed on her computer (the Canva font is Arial MT Pro, which we cannot bundle). Font and colour are not editable. | Her rules. | client |
-| 35 | The background is the lab image she supplied, cropped the same way on every slide, with the column of ceiling lights centred. | Her rule. | client |
+| 35 | The background is the lab image she supplied, cropped the same way on every slide, with the column of ceiling lights centred. The TikTok event slides (slide 2 onwards) have a plain black background instead, because the lab picture was distracting there (changed 2026-10-26). The picture's bottom rows had a white line, which was repaired in the file. | Her rule. | client |
 | 36 | She can edit the wording of any text box, move the text boxes and the image, and zoom or crop the image. The top-box wording is edited per slide, not for all slides at once. Default top-box wording is "Upcoming events from our calendar...". | Her rules. | client |
 | 37 | Equal spacing: on Instagram, about 50 px between the top box and the image, and the same between the image and the date-and-title box. The tool keeps the two gaps equal when the image changes size or the date-and-title box is moved. Dragging the image by hand puts it exactly where she drops it, and an "Even out the gaps" button brings equal gaps back. | She does this by hand today. | client |
 | 38 | When a long title needs two or more lines, the date-and-title box grows downward and the text size stays the same. If the box passes the link-sticker line (about y 1590), the tool shows a warning. The image does not shrink on its own. | Her call. Text is never made smaller. | client |
@@ -82,7 +82,7 @@ Cards are sorted soonest first. An event the feed marks as repeating (weekly, bi
 | 40 | TikTok event slides go soonest first. Each slide is centred left to right and top to bottom within the usable area (between the top icons and the description text at the bottom). | Her rule. | client |
 | 41 | Her edits are saved in the browser and kept across refreshes. There is a "Reset to original" button for one slide and for everything. Saved edits for an event are dropped after its date has passed. Edits are saved on one computer and do not follow her to another. "Reset everything" asks before it clears, and the page's "Start over" clears the saved edits too. | She does not want to lose work. | client |
 | 42 | Three download buttons. "Download event images" saves the original images of all selected events (decision 11). "Download finished images" and "Download layers for Canva" each save only the slides on the tab that is open: the Instagram tab gives the Instagram slides, the TikTok tab gives the TikTok slides, the cover included. Finished-image files include "Instagram" or "TikTok" in their names. TikTok files are numbered, with the cover first. | Her rule, changed 2026-10-26 from one ZIP with both platforms. | client |
-| 43 | "Download layers for Canva" is separate from the main download and is optional. For each slide it gives the finished image plus each layer (background, each image, each text box) as its own transparent PNG. The text arrives as pictures, so it is not editable in Canva. The ZIP has a folder for each slide, named like the finished files, holding `00_finished.png` and the layers numbered from the back (`01_background.png`, `02_event-image.png`, and so on). Every layer is the full size of the slide, so the layers line up when placed at the top left in Canva. | A first, simpler version. Live-text export is a later idea. | client |
+| 43 | "Download layers for Canva" is separate from the main download and is optional. For each slide it gives the finished image plus each layer (background, each image, each text box) as its own transparent PNG. The text layers are pictures, which is fine for moving pieces. For changing the words, each folder also holds `00_editable.pptx`: the same slide as a PowerPoint file with the wording as live Arial text, which Canva opens with the wording editable (Create a design, then Import file). The ZIP has a folder for each slide, named like the finished files, holding `00_finished.png` and the layers numbered from the back (`01_background.png`, `02_event-image.png`, and so on). Every layer is the full size of the slide, so the layers line up when placed at the top left in Canva. | A first, simpler version. Live-text export is a later idea. | client |
 | 44 | Finished images are PNG files. | Sharpest text. | client |
 | 45 | The Instagram link sticker is added by Amanda inside Instagram. It is not part of the image. The tool only keeps space for it and warns if text goes into it. | How she posts today. | client |
 
@@ -150,7 +150,6 @@ Things we discussed and deliberately left out, so they aren't lost.
 - The live feed has two fields the brief doesn't mention (`overlay` and `cap`, which look like admin statistics). They are ignored for now.
 
 **Social images (section 13)**
-- Canva layers with live, editable text (for example by PDF).
 - Automatic ordering of collage images by whether they contain writing.
 - A single shared Instagram and TikTok design.
 
@@ -333,8 +332,9 @@ type DateWindow  = { start: string; end: string }; // YYYY-MM-DD
 
 - **12.10 Date label.** `formatDateLabel(dates: string[]): string`. Purpose: turns an event's dates into "Oct 21", "July 1-3" or "July 1, 4, 6". Hides the month names and the range rules. Called by the slide layout.
 - **12.11 Slide layout.** `layoutInstagramSlide(input, edits?)`, `layoutTikTokEventSlide(input, edits?)`, `layoutTikTokCover(inputs, edits?)`. Purpose: pure functions that turn the event images' sizes, the text and any saved edits into box positions. Hides all the measurements in section 13, the equal-gap rule, the centring and the automatic collage arrangement. Called by the editor and by the slide drawing.
-- **12.12 Slide drawing.** `renderSlide(layout): Promise<Blob>` and `renderLayers(layout): Promise<Blob[]>`. Purpose: draws a layout to a PNG, or to one PNG per layer. Hides the canvas and the font fallbacks. Images come through the image proxy (12.7). Called by the editor and the downloads.
+- **12.12 Slide drawing.** `renderSlide(layout): Promise<Blob>`, `renderLayers(layout): Promise<Blob[]>` and `renderPieces(layout): Promise<{ background: Blob | null; pictures: Blob[] }>` (the background and each picture cut to its frame, for the editable file). Purpose: draws a layout to a PNG, or to one PNG per layer. Hides the canvas and the font fallbacks. Images come through the image proxy (12.7). Called by the editor and the downloads.
 - **12.13 Saved edits.** `loadEdits(key)`, `saveEdits(key, edits, lastDate)`, `resetSlide(key)`, `resetAll()`, `pruneExpired(today)`. Purpose: keeps her edits in browser storage. Hides the storage format. Called by the editor.
+- **12.15 Editable slide file.** `buildEditablePptx(layout, pieces): Promise<Blob>`. Purpose: makes a one-slide PowerPoint file at the slide's size, with the background and pictures as pictures and the wording as live text boxes in Arial (decision 43). Hides the PowerPoint library (`pptxgenjs`) and the pixel, point and inch conversions. Called by the Social ZIP.
 - **12.14 Social ZIP.** `downloadFinished(slides)` and `downloadLayers(slides)`. Purpose: builds the two ZIPs in the browser. Hides file naming and ZIP building (the existing ZIP library). Called by the editor's buttons.
 
 ### Dependencies
@@ -348,6 +348,7 @@ paste box -> /api/check-image -> 12.8 -> 12.6
 editor -> 12.10, 12.11, 12.13
 editor -> 12.12 -> 12.7
 editor buttons -> 12.14 -> 12.12
+12.14 -> 12.15
 ```
 
 ### Not modules
@@ -365,4 +366,4 @@ All sizes are for a 1080×1920 slide. They were measured from Amanda's own examp
 | Gaps | about 50 px above and below the image, kept equal | about 50 px between image and box |
 | Keep clear | link sticker area from about y 1590 down (warning line) | right side x 940 to 1080 from y 1000 to 1750, and the description area near the bottom |
 | Vertical placement | below the top box | stack centred in the band y 150 to 1600 (centre about y 875) |
-| Background | lab image, same crop, lights centred | same |
+| Background | lab image, same crop, lights centred | the cover has the lab image. Event slides are plain black |
