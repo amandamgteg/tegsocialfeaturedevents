@@ -22,6 +22,7 @@ function cleanImageEdit(raw: unknown): ImageEdit {
   if (focus) edit.focus = focus;
   if (isNumber(r.scale)) edit.scale = r.scale;
   if (isNumber(r.zoom)) edit.zoom = r.zoom;
+  if (isText(r.ratio) && (IMAGE_RATIOS as readonly string[]).includes(r.ratio)) edit.ratio = r.ratio;
   return edit;
 }
 

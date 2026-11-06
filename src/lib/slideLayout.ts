@@ -28,7 +28,7 @@ export type SlideEdits = {
   /** TikTok cover only: the card keys from back to front. */
   order?: string[];
 };
-export type ImageEdit = { pos?: Point; scale?: number; zoom?: number; focus?: Point };
+export type ImageEdit = { pos?: Point; scale?: number; zoom?: number; focus?: Point; ratio?: string };
 export type SlideLayout = {
   width: number;
   height: number;
@@ -223,22 +223,25 @@ export function layoutTikTokCover(input: TikTokCoverInput, edits: SlideEdits = {
   const step = twoColumns ? (height - mh) / (rows - 0.5) : rows > 1 ? (height - mh) / (rows - 1) : 0;
 
   const placed = items.map((item, i): CoverImage => {
+    // Each picture is its own shape, or the ratio she chose for it, as big as its cell allows.
+    const edit = edits.collage?.[item.key] ?? {};
+    const chosen = ratioAspect(edit);
+    const aspect = chosen ?? item.imageSize.width / item.imageSize.height;
     const scale = Math.min(mw / item.imageSize.width, mh / item.imageSize.height);
-    const autoW = Math.round(item.imageSize.width * scale);
-    const autoH = Math.round(item.imageSize.height * scale);
+    const autoW = Math.round(chosen ? Math.min(mw, mh * aspect) : item.imageSize.width * scale);
+    const autoH = Math.round(chosen ? Math.min(mh, mw / aspect) : item.imageSize.height * scale);
     const side = i % 2; // 0 is the left column, 1 the right
     const row = twoColumns ? Math.floor(i / 2) : i;
     const rowTop = top + row * step + (twoColumns && side === 1 ? step / 2 : 0);
     const autoX = n === 1 ? (SLIDE_WIDTH - autoW) / 2 : side === 0 ? TIKTOK_COLUMN.x : TIKTOK_COLUMN.x + TIKTOK_COLUMN.w - autoW;
     const autoY = rowTop + (mh - autoH) / 2;
-    const edit = edits.collage?.[item.key] ?? {};
     // A size change grows or shrinks the picture around its middle.
     const k = clamp(edit.scale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
     const w = Math.round(autoW * k);
     const h = Math.round(autoH * k);
     const x = edit.pos?.x ?? autoX + autoW / 2 - w / 2;
     const y = edit.pos?.y ?? autoY + autoH / 2 - h / 2;
-    return { key: item.key, url: item.imageUrl, x, y, w, h, source: cropSource(item.imageSize, edit.zoom, edit.focus) };
+    return { key: item.key, url: item.imageUrl, x, y, w, h, source: cropSource(item.imageSize, edit.zoom, edit.focus, aspect) };
   });
 
   // Front to back: the saved order first, then any picture it does not mention, in the order the events were picked.

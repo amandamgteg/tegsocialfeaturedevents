@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type ImageEdit, type SlideEdits, type TikTokCoverLayout } from "@/lib/slideLayout";
+import { IMAGE_RATIOS, ratioAspect, MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type ImageEdit, type SlideEdits, type TikTokCoverLayout } from "@/lib/slideLayout";
 import type { WallItem } from "./PhotoWall";
 import { SlidePreview } from "./SlidePreview";
 import { slideWarning } from "./slideWarning";
@@ -129,6 +129,17 @@ export function CoverEditPanel({
               </button>
             ))}
           </div>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
+            Image shape
+            <select value={ratioAspect(imageEdit(selected)) === undefined ? "" : imageEdit(selected).ratio} onChange={(e) => setImageEdit(selected, { ratio: e.target.value || undefined, zoom: undefined, focus: undefined })} style={field}>
+              <option value="">Original</option>
+              {IMAGE_RATIOS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
             Image size
             <input type="range" min={MIN_IMAGE_SCALE * 100} max={MAX_IMAGE_SCALE * 100} step={1} value={Math.round((imageEdit(selected).scale ?? 1) * 100)} onChange={(e) => setImageEdit(selected, { scale: Number(e.target.value) / 100 })} />

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
-import { layoutInstagramSlide, layoutTikTokEventSlide, IMAGE_RATIOS, type SlideEdits } from "@/lib/slideLayout";
+import { layoutInstagramSlide, layoutTikTokEventSlide, layoutTikTokCover, IMAGE_RATIOS, type SlideEdits } from "@/lib/slideLayout";
 import { loadEdits, saveEdits } from "@/lib/slideEdits";
 
 const measureText = (text: string, size: number) => text.length * size * 0.5;
@@ -65,5 +65,32 @@ describe("image ratio", () => {
       saveEdits("k", { ratio: "nope" }, "2099-01-01");
       expect(loadEdits("k")).toEqual({});
     });
+  });
+});
+
+describe("image ratio on the TikTok cover", () => {
+  const cover = (collage?: Record<string, { ratio?: string; zoom?: number }>) =>
+    layoutTikTokCover(
+      { items: [{ key: "a", imageUrl: "u1", imageSize: { width: 1600, height: 800 } }, { key: "b", imageUrl: "u2", imageSize: { width: 800, height: 800 } }], measureText },
+      { collage },
+    ).images;
+  const pic = (images: ReturnType<typeof cover>, key: string) => images.find((i) => i.key === key)!;
+
+  it("keeps each picture's own shape without a ratio", () => {
+    expect([pic(cover(), "a").w, pic(cover(), "a").h]).toEqual([500, 250]);
+  });
+  it("gives only the chosen picture the new shape, as big as its collage cell allows", () => {
+    const images = cover({ a: { ratio: "9:16" } });
+    expect([pic(images, "a").w, pic(images, "a").h]).toEqual([315, 560]);
+    expect([pic(images, "b").w, pic(images, "b").h]).toEqual([500, 500]);
+  });
+  it("crops to fill the frame and keeps zoom working", () => {
+    const a = pic(cover({ a: { ratio: "1:1", zoom: 2 } }), "a");
+    expect([a.w, a.h]).toEqual([500, 500]);
+    expect(a.source).toMatchObject({ w: 400, h: 400 });
+  });
+  it("remembers a ratio on a collage picture", () => {
+    saveEdits("cover", { collage: { a: { ratio: "4:5" }, b: { ratio: "bad" } } }, "2099-01-01");
+    expect(loadEdits("cover").collage).toEqual({ a: { ratio: "4:5" } });
   });
 });

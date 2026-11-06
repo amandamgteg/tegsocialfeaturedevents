@@ -704,6 +704,20 @@ Copy this and fill it in:
 - Open any slide with the edit button and look for "Image shape" above "Image size".
 
 **What is still waiting:**
-- Nothing. The TikTok cover collage does not have shape choices yet.
+- Nothing.
 
 **Needs from Amanda:** Nothing. If you would like the "Fill square" button removed now that the menu does the same job, say so. Its tests would need your approval to change.
+
+### 2026-11-06 · Change request: image shape on the TikTok cover
+**Status:** Done
+
+**What got done:**
+- The TikTok cover now has the same "Image shape" menu. Pick a picture in the collage, then choose Original, 1:1, 4:5, 16:9 or 9:16 for that one picture. The others stay as they are.
+- It is saved with your other edits, and "Reset to original" clears it.
+
+**What you can see or try:**
+- Open the cover's edit window, select a picture, and use "Image shape".
+
+**What is still waiting:** Nothing.
+
+**Needs from Amanda:** Nothing
