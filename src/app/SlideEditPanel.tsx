@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type SlideEdits, type SlideLayout, type TikTokEventLayout } from "@/lib/slideLayout";
+import { IMAGE_RATIOS, ratioAspect, MAX_IMAGE_SCALE, MAX_ZOOM, MIN_IMAGE_SCALE, MIN_ZOOM, SLIDE_HEIGHT, SLIDE_WIDTH, type SlideEdits, type SlideLayout, type TikTokEventLayout } from "@/lib/slideLayout";
 import type { WallItem } from "./PhotoWall";
 import { SlidePreview } from "./SlidePreview";
 import { slideWarning } from "./slideWarning";
@@ -117,6 +117,17 @@ export function SlideEditPanel({
             <textarea rows={2} value={edits.captionText ?? caption.lines.join(" ")} onChange={(e) => onChange({ ...edits, captionText: e.target.value })} style={field} />
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
+            Image shape
+            <select value={ratioAspect(edits) === undefined ? "" : edits.ratio ?? "1:1"} onChange={(e) => onChange({ ...edits, ratio: e.target.value || undefined, square: undefined, zoom: undefined, focus: undefined })} style={field}>
+              <option value="">Original</option>
+              {IMAGE_RATIOS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 14 }}>
             Image size
             <input type="range" min={MIN_IMAGE_SCALE * 100} max={MAX_IMAGE_SCALE * 100} step={1} value={Math.round((edits.imageScale ?? 1) * 100)} onChange={(e) => onChange({ ...edits, imageScale: Number(e.target.value) / 100 })} />
           </label>
@@ -130,7 +141,7 @@ export function SlideEditPanel({
             </button>
             {platform === "TikTok" ? (
               <>
-                <button type="button" aria-pressed={!!edits.square} onClick={() => onChange({ ...edits, square: !edits.square, zoom: undefined, focus: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: edits.square ? "#7fe0ea" : "transparent", color: edits.square ? "#04242a" : "#eaf4f2" }}>
+                <button type="button" aria-pressed={ratioAspect(edits) === 1} onClick={() => onChange({ ...edits, square: ratioAspect(edits) === 1 ? undefined : true, ratio: undefined, zoom: undefined, focus: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: ratioAspect(edits) === 1 ? "#7fe0ea" : "transparent", color: ratioAspect(edits) === 1 ? "#04242a" : "#eaf4f2" }}>
                   Fill square
                 </button>
                 <button type="button" onClick={() => onChange({ ...edits, imagePos: undefined, captionPos: undefined })} style={{ ...button, border: "1.5px solid #6fa3a6", background: "transparent", color: "#eaf4f2" }}>

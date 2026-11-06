@@ -21,6 +21,8 @@ export type SlideEdits = {
   focus?: Point;
   /** TikTok only: "Fill square" shows the picture in an 800 by 800 square, cropped to fit. */
   square?: boolean;
+  /** The shape she chose for the event image: one of IMAGE_RATIOS. Left out means the picture's own shape. */
+  ratio?: string;
   /** TikTok cover only: edits to each picture in the collage, by card key. */
   collage?: Record<string, ImageEdit>;
   /** TikTok cover only: the card keys from back to front. */
@@ -103,6 +105,18 @@ function textBox(box: { x: number; y: number; w: number }, spec: { fontSize: num
   return { ...box, h: lines.length * spec.lineHeight + spec.padding * 2, lines, fontSize: spec.fontSize, lineHeight: spec.lineHeight };
 }
 
+/** The shapes she can choose for an event image, as width:height. "Original" is no choice at all. */
+export const IMAGE_RATIOS = ["1:1", "4:5", "16:9", "9:16"] as const;
+
+/** Width over height for a chosen ratio, or undefined for the picture's own shape. TikTok's older "Fill square" counts as 1:1. */
+export function ratioAspect(edits: Pick<SlideEdits, "ratio" | "square">): number | undefined {
+  const known = (IMAGE_RATIOS as readonly string[]).includes(edits.ratio ?? "");
+  const ratio = known ? edits.ratio! : edits.square ? "1:1" : undefined;
+  if (!ratio) return undefined;
+  const [w, h] = ratio.split(":").map(Number);
+  return w / h;
+}
+
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 const tidy = (v: number) => Math.round(v * 1000) / 1000;
 export const MIN_ZOOM = 1;
@@ -136,12 +150,15 @@ export function layoutInstagramSlide(input: InstagramSlideInput, edits: SlideEdi
   const topBottom = topBox.y + topBox.h;
 
   // Keep the image's own shape, as big as fits, then apply her size change.
-  const fit = Math.min(IMAGE_MAX.w / imageSize.width, IMAGE_MAX.h / imageSize.height);
-  const scale = fit * clamp(edits.imageScale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
-  const w = Math.round(imageSize.width * scale);
-  const h = Math.round(imageSize.height * scale);
+  // If she chose a ratio, the frame has that shape instead, as big as the same maximum allows.
+  const chosen = ratioAspect(edits);
+  const aspect = chosen ?? imageSize.width / imageSize.height;
+  const k = clamp(edits.imageScale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
+  const fit = chosen ? Math.min(IMAGE_MAX.w, IMAGE_MAX.h * aspect) / imageSize.width : Math.min(IMAGE_MAX.w / imageSize.width, IMAGE_MAX.h / imageSize.height);
+  const w = Math.round(chosen ? Math.min(IMAGE_MAX.w, IMAGE_MAX.h * aspect) * k : imageSize.width * fit * k);
+  const h = Math.round(chosen ? (Math.min(IMAGE_MAX.w, IMAGE_MAX.h * aspect) / aspect) * k : imageSize.height * fit * k);
   const y = edits.imagePos ? edits.imagePos.y : edits.captionPos ? topBottom + Math.max(0, (edits.captionPos.y - topBottom - h) / 2) : topBottom + GAP;
-  const image = { x: edits.imagePos?.x ?? (SLIDE_WIDTH - w) / 2, y, w, h, url: input.imageUrl, source: cropSource(imageSize, edits.zoom, edits.focus) };
+  const image = { x: edits.imagePos?.x ?? (SLIDE_WIDTH - w) / 2, y, w, h, url: input.imageUrl, source: cropSource(imageSize, edits.zoom, edits.focus, aspect) };
 
   const caption = textBox(
     { x: edits.captionPos?.x ?? CAPTION.x, y: edits.captionPos?.y ?? image.y + image.h + GAP, w: CAPTION.w },
@@ -163,13 +180,14 @@ function hiddenByTikTok(boxes: Box[]): boolean {
  */
 export function layoutTikTokEventSlide(input: InstagramSlideInput, edits: SlideEdits = {}): TikTokEventLayout {
   const { imageSize, measureText } = input;
-  const aspect = edits.square ? 1 : imageSize.width / imageSize.height;
+  const chosen = ratioAspect(edits);
+  const aspect = chosen ?? imageSize.width / imageSize.height;
 
-  // The frame is the picture's own shape (or a square), as big as fits the column, then her size change.
-  const fit = edits.square ? 1 : Math.min(TIKTOK_COLUMN.w / imageSize.width, TIKTOK_IMAGE_MAX_H / imageSize.height);
+  // The frame is the picture's own shape (or the ratio she chose), as big as fits the column, then her size change.
+  const fit = Math.min(TIKTOK_COLUMN.w / imageSize.width, TIKTOK_IMAGE_MAX_H / imageSize.height);
   const k = clamp(edits.imageScale ?? 1, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE);
-  const w = Math.round((edits.square ? TIKTOK_COLUMN.w : imageSize.width * fit) * k);
-  const h = Math.round((edits.square ? TIKTOK_COLUMN.w : imageSize.height * fit) * k);
+  const w = Math.round((chosen ? Math.min(TIKTOK_COLUMN.w, TIKTOK_IMAGE_MAX_H * aspect) : imageSize.width * fit) * k);
+  const h = Math.round((chosen ? Math.min(TIKTOK_IMAGE_MAX_H, TIKTOK_COLUMN.w / aspect) : imageSize.height * fit) * k);
 
   const text = edits.captionText ?? `${formatDateLabel(input.dates)} - ${input.title}`;
   const captionSize = textBox({ x: TIKTOK_COLUMN.x, y: 0, w: TIKTOK_COLUMN.w }, CAPTION, text, measureText);

@@ -690,3 +690,20 @@ Copy this and fill it in:
   - Left out on purpose: a phone layout, changing fonts or colours, automatic detection of writing in images, and video.
 
 **Needs from Amanda:** Nothing
+
+### 2026-11-06 · Change request: pick the shape of the event image
+**Status:** Done
+
+**What got done:**
+- When you edit an Instagram or TikTok slide, there is now an "Image shape" menu. Choose Original, 1:1, 4:5, 16:9 or 9:16.
+- The picture is cropped to fit the new shape, never stretched. You can still zoom and slide the picture around inside the frame.
+- Your choice is saved in your browser like your other edits, and "Reset to original" clears it.
+- The TikTok "Fill square" button still works. It is the same as choosing 1:1.
+
+**What you can see or try:**
+- Open any slide with the edit button and look for "Image shape" above "Image size".
+
+**What is still waiting:**
+- Nothing. The TikTok cover collage does not have shape choices yet.
+
+**Needs from Amanda:** Nothing. If you would like the "Fill square" button removed now that the menu does the same job, say so. Its tests would need your approval to change.

@@ -1,4 +1,4 @@
-import type { ImageEdit, Point, SlideEdits } from "./slideLayout";
+import { IMAGE_RATIOS, type ImageEdit, type Point, type SlideEdits } from "./slideLayout";
 
 // Amanda's slide edits, kept in her own browser (decision 41). One entry per card key, each with the last date of
 // its event so the entry can be dropped once the event is over. Every call tolerates storage being missing or blocked.
@@ -38,6 +38,7 @@ function clean(raw: unknown): SlideEdits {
   if (isNumber(r.imageScale)) edits.imageScale = r.imageScale;
   if (isNumber(r.zoom)) edits.zoom = r.zoom;
   if (r.square === true) edits.square = true;
+  if (isText(r.ratio) && (IMAGE_RATIOS as readonly string[]).includes(r.ratio)) edits.ratio = r.ratio;
   if (Array.isArray(r.order)) {
     const order = r.order.filter(isText);
     if (order.length > 0) edits.order = order;
